@@ -1,4 +1,5 @@
-%\VignetteIndexEntry{bbl: Boltzmann Bayes Learner}
+%\VignetteIndexEntry{bbl: Boltzmann Bayes Learner for High-Dimensional Inference with Discrete Predictors in R}
+%\VignetteDepends{BiocManager,Biostrings}
 %\documentclass[article]{jss}
 \documentclass[nojss]{jss}
 
@@ -9,7 +10,7 @@
 \DeclareMathOperator*{\argmax}{arg\:max}
 
 %% another package (only for this demo article)
-\usepackage{framed}
+%\usepackage{framed}
 
 %% new custom commands
 \newcommand{\class}[1]{`\code{#1}'}
@@ -51,7 +52,7 @@ Discrete Predictors in R}
   significant in big data modeling. We describe \pkg{bbl}, an \proglang{R}
   package for Boltzmann Bayes learning, which enables a comprehensive
   supervised learning of the association between a large number of 
-  discrete factors and multi-level response variables. Its basic underlying
+  categorical predictors and multi-level response variables. Its basic underlying
   statistical model is a collection of (fully visible) Boltzmann machines
   inferred for each distinct response level. The algorithm reduces to the
   naive Bayes learner when interaction is ignored. We illustrate example use
@@ -90,7 +91,8 @@ Discrete Predictors in R}
 \section{Introduction}\label{sec:intro}
 
 Many supervised learning tasks involve modeling discrete response
-variables $y$ using predictors ${\bf x}$ that can occupy discrete factor levels \citep{hastie_etal}.
+variables $y$ using predictors ${\bf x}$ that can occupy categorical 
+factor levels \citep{hastie_etal}.
 Ideally, it would be best to model the joint distribution $P({\bf x},y)$
 via maximum likelihood, 
 \begin{equation}
@@ -158,26 +160,34 @@ allowing the user to train and test statistical models in a variety of
 different usage settings.
 
 \section{Model and algorithm} 
-For completeness and for reference to software features described in Sec.~\ref{sec:usage}, 
-we summarize in this section key relevant formulas \citep{woo_etal-2016} used by \pkg{bbl}, 
+For completeness and for reference to software features described in 
+Sec.~\ref{sec:usage}, we summarize in this section key relevant formulas \citep{woo_etal-2016} used by \pkg{bbl}, 
 generalized such that predictors each can have varying number of factor levels. 
 
 \subsection{Model description}
 The discrete response $y_k$ for an instance $k$ takes factor values $y$ among $K\ge 2$ groups; e.g.
-$y=\text{\code{case},\:\code{control}}$; $k=1,\cdots, n$ denotes sample index
-with the total sample size $n$. We use symbol $y$ for a particular factor value and 
+$y=\text{\code{case},\:\code{control}}$; $k=1,\cdots, n$ denotes sample (or
+configuration) index. We also introduce frequency $w_k$, each of which
+is integral number of times each configuration was observed in data, such that
+$\sum_k w_k=n_s$ is the total sample size. If data takes the form of 
+one entry per obserbation, $w_k=1$ and $n=n_s$. The use of
+frequency $w_k$ can lead to more efficient learning when the number of predictors
+is relatively small.
+
+We use symbol $y$ for a particular factor value and 
 generic response variables interchangeably. The overall likelihood is
 \begin{equation}
-L=\sum_k \ln P({\bf x}^k,y_k)=\sum_y\sum_{k\in y} \ln P({\bf x}^k,y)\equiv \sum_y L_y,
+L=\sum_k w_k\ln P({\bf x}^k,y_k)=\sum_y\sum_{k\in y} w_k\ln P({\bf x}^k,y)\equiv \sum_y L_y,
 \end{equation}
 where the second summation is over all $k$ for which $y_k=y$.
 The inference is first performed for each group $y$ separately, maximizing $L_y$ given by
 \begin{equation}
-L_y = \sum_{k \in y} \left[\ln P({\bf x}^k|y)+\ln P(y)\right]
-=\sum_{k \in y}\ln P({\bf x}^k|y)+n_y p_y,
+L_y = \sum_{k \in y} w_k\left[\ln P({\bf x}^k|y)+\ln P(y)\right]
+=\sum_{k \in y}w_k\ln P({\bf x}^k|y)+n_y p_y,
 \label{eq:Ly}
 \end{equation}
-where $p_y\equiv P(y)$ is the marginal distribution of $y$ and $n_y$ is the size of group $y$.
+where $p_y\equiv P(y)$ is the marginal distribution of $y$ and $n_y=\sum_k w_k$ 
+is the size of group $y$.
 
 In parametrizing the first term in Eq.~(\ref{eq:Ly}), we assume that predictor variables take discrete factor levels, each with distinct effect on responses,
 e.g., $x_i=\text{\code{a},\:\code{t},\:\code{g},\:\code{c}}$ for DNA sequence data.
@@ -215,7 +225,8 @@ where parameter superscripts were omitted because response group is not present.
 \subsection{Pseudo-likelihood inference}
 One option for fitting Eq.~(\ref{eq:pxy}) to data is pseudo-likelihood maximization \citep{besag}:
 \begin{equation}
-L_y-n_yp_y=\sum_{k \in y} \ln P({\bf x}^k|y)\simeq \sum_{k\in y} \sum_i \ln P_i(x_i^k|y,x_{j\backslash i}^k)
+L_y-n_yp_y=\sum_{k \in y} w_k\ln P({\bf x}^k|y)
+\simeq \sum_{k\in y} w_k\sum_i \ln P_i(x_i^k|y,x_{j\backslash i}^k)
 \equiv \sum_i L_{iy},
 \label{eq:Ly2}
 \end{equation}
@@ -237,28 +248,40 @@ and
 Including $L_2$ penalizers $(\lambda_h,\lambda)$, 
 $L_{iy}$ in Eq.~(\ref{eq:Ly2}) becomes
 \begin{equation}
-L_{iy}=\sum_{k\in y} \left[{\bar h}_i^{(y)}(x_i^k|x_{j\backslash i}^k)-\ln Z_{iy}(x_{j\backslash i}^k)\right]
--\frac{1}{2}\left[\lambda_h \sum_x h_i^{(y)}(x)^2
-+\lambda\sum_{j,x,x^\prime} J_{ij}^{(y)}(x,x^\prime)^2\right]
+L_{iy}=\sum_{k\in y} w_k
+\left[{\bar h}_i^{(y)}(x_i^k|x_{j\backslash i}^k)-\ln Z_{iy}(x_{j\backslash i}^k)\right]
+-\frac{\lambda_h}{2} \sum_x h_i^{(y)}(x)^2
++\frac{\lambda}{2}\sum_{j,x,x^\prime} J_{ij}^{(y)}(x,x^\prime)^2
 \label{eq:Liy}
 \end{equation}
 with first derivatives
 \begin{subequations}
 \begin{eqnarray}
 \frac{\partial L_{iy}/n_y}{\partial h_i^{(y)}(x)} &=& {\hat f}_i^{(y)}(x) 
-- \frac{1}{n_y}\sum_{k\in y} P_i(x|y, x_{l\backslash i}^k)
+- \frac{1}{n_y}\sum_{k\in y} w_k P_i(x|y, x_{l\backslash i}^k)
 -\lambda_h h_i^{(y)}(x),
 \\
-\frac{\partial L_{iy}/n_y}{\partial J_{ij}^{(y)}(x,x^\prime)} &=& {\hat f}_{ij}^{(y)}(x,x^\prime) 
-- \frac{1}{n_y}\sum_{k\in y} \mathbbm{1}(x_j^k=x^\prime)
+\frac{\partial L_{iy}/n_y}{\partial J_{ij}^{(y)}(x,x^\prime)} &=& 
+{\hat f}_{ij}^{(y)}(x,x^\prime) 
+- \frac{1}{n_y}\sum_{k\in y} w_k\mathbbm{1}(x_j^k=x^\prime)
 P_i(x|y, x_{l\backslash i}^k)
 -\lambda J_{ij}^{(y)}(x,x^\prime),
 \end{eqnarray}
 \label{eq:partial}
 \end{subequations}
-\!\!where ${\hat f}_i^{(y)}(x)$ and ${\hat h}_{ij}^{(y)}(x,x^\prime)$ are the first 
-and second moments of predictor values and $\mathbbm{1}(x)$ is the indicator function.
-In \pkg{bbl}, Eqs.~(\ref{eq:partial}) are solved in \proglang{C++} functions using the quasi-Newton optimization function 
+\!\!where 
+\begin{subequations}
+\begin{eqnarray}
+{\hat f}_i^{(y)}(x) \!&= &\! \frac{1}{n_y}\sum_{k\in y} w_k 
+\mathbbm{1}(x_i^k=x),\\
+{\hat f}_{ij}^{(y)}(x,x^\prime) \!&= &\! \frac{1}{n_y}\sum_{k\in y} w_k 
+\mathbbm{1}(x_i^k=x)\mathbbm{1}(x_j^k=x^\prime)
+\end{eqnarray}
+\end{subequations}
+are the first and second moments of predictor values and $\mathbbm{1}(x)$ 
+is the indicator function.
+In \pkg{bbl}, Eqs.~(\ref{eq:partial}) are solved in \proglang{C++} functions 
+using the quasi-Newton optimization function 
 \code{gsl_multimin_fdfminimizer_vector_bfgs2} in GNU Scientific Library 
 (\url{https://www.gnu.org/software/gsl}).
 By default, $\lambda_h=0$ and only interaction parameters are penalized.
@@ -343,6 +366,28 @@ frequency ${\hat f}_i^{(y)}(x)$ and covariance ${\hat f}_{ij}^{(y)}(x,x^\prime)$
 using data augmented by a prior count of 1 uniformly distributed among all $L_i$ factor levels for 
 each predictor.
 
+\subsection{Naive Bayes}
+When interaction is ignored ($J_{ij}^{(y)}=0$), the model can be solved 
+analytically. From Eqs.~(\ref{eq:mf}) and (\ref{eq:hbari}), 
+\begin{equation}
+{\hat h}_i^{(y)}(x)=\ln\left[{\hat f}_i^{(y)}(x)/{\hat f}_i^{(y)}(0)\right]
+\label{eq:hhi}
+\end{equation}
+and \citep{woo_etal-2016}
+\begin{equation}
+L_y-n_y\ln p_y=\sum_{k\in y}w_k\ln P({\bf x}^k|y)
+=n_y\sum_{i,x} {\hat f}_i^{(y)}(x) \ln {\hat f}_i^{(y)}(x).
+\end{equation}
+The likelihood ratio statistic for each predictor, where the
+null hypothesis is $h_i^{(y)}(x)=h_i(x)$ with $h_i(x)$ the ``pooled''
+inference parameters (same values for all response groups), is then
+\begin{equation}
+q_i = 2\sum_y n_y\sum_x \left[{\hat f}_i^{(y)}(x)\ln {\hat f}_i^{(y)}(x)
+-{\hat f}_i\ln {\hat f}_i(x)\right].
+\label{eq:qi}
+\end{equation}
+The statistic $q_i\sim \chi^2$ with ${\rm d.f.}=(K-1)(L_i-1)$.
+
 \subsection{Classification}
 For prediction, we combine predictor distributions for all response groups via Bayes formula:
 \begin{equation}
@@ -402,112 +447,236 @@ If response is binary, the score defined by Eq.~(\ref{eq:s}) is sensitive to mar
 the two groups via Eq.~(\ref{eq:F}). 
 The area under curve (AUC) of receiver operating characteristic is a more robust performance measure
 independent of probability cutoff. In \pkg{bbl}, the prediction score
-given by Eqs.~(\ref{eq:s}) and (\ref{eq:yhat}) is used in general with the option to use AUC for binary
-response using R package \pkg{pROC} \citep{proc}.
+given by Eqs.~(\ref{eq:s}) and (\ref{eq:yhat}) is used in general with the option 
+to use AUC for binary response using R package \pkg{pROC} \citep{proc}.
 
 \section{Software Usage and Tests}
 \label{sec:usage}
-\subsection[Titanic data]{\code{Titanic} data}
-We first illustrate BB inference for full multilevel response data sets by \pkg{bbl} using the base 
-\proglang{R} data \code{Titanic}:
+\subsection[Logistic regression]{Logistic regression}
+\label{sec:lr}
+To motivate the use of \pkg{bbl} and highlight differences, we first 
+consider the use of logistic regression using \code{glm}. 
+We use the base \proglang{R} data \code{Titanic} as an example:
 %
 <<data>>=
 titanic <- as.data.frame(Titanic)
-head(titanic)
+titanic
+freq <- titanic$Freq
+titanic <- titanic[,1:4]
 @
 %
-The frequency data can be converted into raw data (one observation per row) using the utility function
-\code{freq2raw} in \pkg{bbl}:
+Input data can either be of the form above with unique combinations of predictors
+in each row along with frequency or raw data (one observation per row) we generate
+using the utility function \code{freq2raw}:
 %
 <<raw>>=
 library(bbl)
-titanic <- freq2raw(titanic, Freq='Freq')
-head(titanic)
-summary(titanic)
+titanic_raw <- freq2raw(data=titanic, freq=freq)
+head(titanic_raw)
+summary(titanic_raw)
 @
 %
-We first divide the sample into train and test sets,
-%
-<<div>>=
-set.seed(158)
-nsample <- nrow(titanic)
-flag <- rep(TRUE, nsample)
-flag[sample(nsample, nsample/2)] <- FALSE
-dtrain <- titanic[flag,]
-dtest <- titanic[!flag,]
-@
-%
-and apply linear regression using \code{glm}:
+We train a logistic regression model using \code{glm}:
 %
 <<lr>>=
-fit <- glm(Survived ~ ., family=binomial(), data=dtrain)
-prl <- predict(fit, newdata=dtest)
-pROC::roc(response=dtest$Survived, predictor=prl, direction='<')$auc
+gfit0 <- glm(Survived ~ Class + Sex + Age, family=binomial(), data=titanic,
+             weights=freq)
+gfit0
+summary(gfit0)
+@
+%
+The fit above included linear terms only. It indicates that survival was strongly
+associated with class status, sex (female heavily favored), and age.
+The model below includes all interactions:
+%
+<<glm2>>=
+gfit1 <- glm(Survived ~ (Class + Sex + Age)^2, family=binomial(), data=titanic,
+            weights=freq)
+summary(gfit1)
+@
+%
+The summary of interacting model suggests that class status 
+association arose from the linear effect of being \code{Crew} and 
+interaction effect of \code{Female} \code{3rd}-class passengers.
+
+To illustrate training and prediction, we divide the sample into 
+train and test sets:
+%
+<<div>>=
+set.seed(159)
+nsample <- NROW(titanic_raw)
+flag <- rep(TRUE, nsample)
+flag[sample(nsample, nsample/2)] <- FALSE
+dtrain <- titanic_raw[flag,]
+dtest <- titanic_raw[!flag,]
 @
 %
 
-The BB inference in \pkg{bbl} uses objects of \code{S4} class \code{bbl} 
-instantiated by input training data:
+We train \code{glm} model with interactions, omitting interaction 
+\code{Class:Age} because it was rank-deficient, and make prediction on test data:
+<<lr>>=
+gfit2 <- glm(Survived ~ Class*Sex + Sex*Age, family=binomial(), data=dtrain)
+prl <- predict(gfit2, newdata=dtest)
+yhat <- ifelse(prl>0, 'Yes','No')
+mean(yhat==dtest$Survived)
+gauc <- pROC::roc(response=dtest$Survived, predictor=prl, direction='<')$auc
+gauc
+@
+%
+
+\subsection[Boltzmann Bayes learning]{Boltzmann Bayes learning}
+\label{seq:BB}
+The logistic regression shown in the previous subsection allowed for
+inference and significance testing of linear and interaction coefficients 
+in association with the response variable.
+However, the regression fit did not provide any further information regarding 
+the source of association: in the examples in Sec.~\ref{sec:lr},
+the survival of Titanic passengers was seen to be associated with
+being \code{Crew} members and \code{Female} \code{3rd}-class passengers.
+The corresponding linear regression coefficients, which have the same functional form
+as in Eq.~(\ref{eq:F}), are measures of the {\it difference} in enrichment in the
+two response groups, while the two terms whose difference yielded the 
+coefficient remained unknown. 
+How were the sub-groups distributed among survivor and 
+non-survivor groups? Were there very few \code{Female} \code{3rd}-class passengers
+among the survivor group compared to non-survivor, or were they found in both 
+groups but more so among non-survivors? The BB inference estimates the
+individual distributions of predictors in response groups separately 
+and subsequently combines them to make predictions. 
+For binary response, this inference provides estimates of the two coefficients whose 
+difference corresponds to the linear regression outcome. 
+
+With this comparison in mind, we use the same Titanic data below to illustrate
+the BB inference. As in \code{glm}, the package \code{bbl} uses formula input to 
+train an \code{S3} object of class \code{bbl}: 
 %
 <<class>>=
-model <- bbl(data=dtrain, y='Survived')
-model
+bfit0 <- bbl(Survived ~ Class + Sex + Age, data=titanic, freq=freq)
 @
 %
-The argument \code{y} specifies the column name of the response variable.
-
-We first try a single pseudo-likelihood inference by
+which by default triggers a pair of pseudo-likelihood inferences, solving
+the maximum pseudo-likelihood equations (\ref{eq:partial}) first
+under the alternative hypothesis (individual groups have 
+distinct distributions) and then the null hypothesis (all samples 
+have the same distribution).
+The \code{print} method on \code{bbl} shows the structure of model
+and (subsets) of inferred parameters:
 %
-<<ps>>=
-model <- train(model, method='pseudo', lambda=0)
-model@h
-head(model@J,n=1)
+<<print>>=
+bfit0
 @
 %
-The function \code{train} here solves the maximum pseudo-likelihood equations (\ref{eq:partial}) 
-using training data and stores the inferred parameters
-$h_i^{(y)}$ and $J_{ij}^{(y)}$ as lists with argument order $(y,i)$ and 
-$(y,i,j)$, respectively. 
-The inner-most elements of the lists
-are vectors and matrices of dimension $L_i-1=\text{\code{c(3,1,1)}}$ and $(L_i-1,L_j-1)$, respectively.
+where \code{dh} represents parameters $\Delta h_i^{(y)}
+=h_i^{(y)}-h_i$; i.e., 
+individual group parameters offset by the pooled values.
+Internally, the parameters $h_i^{(y)}$ and $J_{ij}^{(y)}$ are stored
+as lists with argument order $(y,i)$ and $(y,i,j)$, respectively. 
+The inner-most elements of the lists are vectors and matrices of dimension 
+$L_i-1=\text{\code{c(3,1,1)}}$ and $(L_i-1,L_j-1)$, respectively.
+The \code{summary} method on \code{bbl} object prints out parameters
+and their significance test outcomes under the naive Bayes approximation
+(no interactions) as a rough overview of model under consideration:
+%
+<<summary>>=
+summary(bfit0)
+@
+%
+The test results are those from likelihood ratio test applied to the
+naive Bayes result, Eq.~(\ref{eq:qi}), with the null hypothesis
+$h_i^{(y)}(a)=h_i(a)$. The tables of bias parameters shown above 
+include those for two survival status groups, which 
+clearly indicate the enrichment of lower \code{Class} status 
+and \code{Male} among non-survivors. \code{Child} are few
+among both survivors and non-survivors; hence highly negative
+bias parameters in all groups, although less so in survivor group,
+as expected. 
 
-We predict the survival probability of test individuals using the trained model:
+We note that the \code{summary} method displays naive Bayes results, for which
+simple analytic expressions for test results are available, even for models containing interactions.
+
+We now fit an interacting model using \pkg{bbl}:
 %
 <<survival>>=
-pr <- predict(model, newdata=dtest, logit=FALSE)
+bfit <- bbl(Survived ~ Class*Sex + Sex*Age, data=titanic, freq=freq)
+bfit
+@
+%
+The parameters printed include those for interactions.
+The \code{plot} method shows a barplot of bias parameters and a heatmap of
+interaction parameters (Fig.~\ref{fig:plot}).
+
+\begin{figure}[!ht]
+\centering
+<<plot, echo=FALSE, fig=TRUE, height=5.0, width=5>>=
+oldpar <- par(mar=c(6,4,3,4),tck=-0.05, cex.axis=0.8)
+plot(bfit)
+par(oldpar)
+@
+\caption{\small \label{fig:plot}
+Plot of \code{bbl} object displays bias (top) and interaction parameters (bottom).
+All parameters are offset by their pooled (singe-group) values.}
+\end{figure}
+
+Note that \code{Male} members were predominant (bias parameters; top), while
+\code{Male} \code{3rd}-class passengers were under-represented 
+(interactions; bottom left), among non-survivors. In addition, 
+\code{Male}-\code{Child} class had enhanced survival (bottom right).
+
+We now fit the training data and make prediction on test data:
+%
+<<predict.bbl>>=
+bfit2 <- bbl(Survived ~ Class*Sex + Sex*Age, data=dtrain)
+pr <- predict(bfit2, newdata=dtest, logit=FALSE)
 head(pr)
 pROC::roc(response=dtest$Survived, predictor=pr[,2], direction='<')$auc
 @
 %
 Here, Eq.~(\ref{eq:py}) was used with ${\bf x}$ from the supplied \code{newdata}.
-The \code{newdata} can either contain the response column as in the above
-example (the program will disregard it), or only the predictor columns. 
-The predictor columns must either have the same order as in the training 
-data or be labeled with column names.
+The \code{predict} method returns a data frame containing predicted group
+probabilities and the most likely group for each row.
 
 One can do cross-validation applied to \code{dtrain} data, dividing it into 
 \code{nfold = 5} train/validation subsets of 4:1 proportion, and aggregating
 predictions for validation sets using the trained model:
+
 %
-<<cv>>=
-cv <- crossval(model, method='pseudo', lambda=10^seq(-6,-2,0.5),
-               verbose=0)
+<<cvsim, echo=TRUE>>=
+cv <- crossVal(Survived ~ Class*Sex + Sex*Age, data=dtrain, 
+               method='pseudo', lambda=10^seq(-5,-2,0.2), verbose=0)
 cv
+plot(cv, mar=c(4,4,3,3), tck=-0.04, las=1, ylab='AUC', bty='n')
 @
 %
-It returns a \code{data.frame} of AUCs for multiple \code{lambda} values.
-There is a maximum AUC at $\lambda=1\times 10^{-3}$. We use this information
-to make prediction:
+
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{figure}[!t]
+\centering
+
+<<plotcv, echo=FALSE, fig=TRUE, height=4, width=4>>=
+plot(cv, mar=c(4,4,3,3), tck=-0.04, las=1, ylab='AUC', bty='n')
+@
+%
+\caption{\small \label{fig:plotcv}
+Cross-validation run of \code{Titanic} data in \code{bbl}.}
+\end{figure}
+
+It returns an object with a \code{data.frame} of AUCs for multiple \code{lambda} values and optimal values with maximum AUC. We use this information
+to make prediction as follows:
 %
 <<pr2>>=
-lstar <- cv[cv$auc==max(cv$auc),]$lambda
-model <- train(model, method='pseudo', lambda=lstar)
-pr2 <- predict(model, newdata=dtest, progress.bar=FALSE)
-yhat2 <- model@groups[apply(pr2,1,which.max)]
-mean(dtest$Survived==yhat2)
-pROC::roc(response=dtest$Survived, predictor=pr2[,2], direction='<')$auc
+model <- bbl(Survived ~ Class*Sex + Sex*Age, data=dtrain, lambda=cv$regstar)
+pr2 <- predict(model, newdata=dtest)
+bscore <- mean(dtest$Survived==pr2$yhat)
+bscore
+bauc <- pROC::roc(response=dtest$Survived, predictor=pr2[,2], direction='<')$auc
+bauc
 @
 %
+Alternatively, \code{predict(cv, ...)} will apply the optimal model within
+cross-validation to test data. The difference compared to the re-training 
+step above is that the optimal model stored in \code{cv} was trained
+on 4/5 of the sample, while \code{model} above used the whole training set.
+
 
 \subsection{Simulated data}
 We next demonstrate the reliability of \pkg{bbl} inference using simulated data.
@@ -517,12 +686,13 @@ predictors <- list()
 m <- 5
 L <- 3
 for(i in 1:m) predictors[[i]] <- seq(0, L-1)
-par <- randompar(predictors, dh=1, dJ=1, distr='unif')
+par <- randompar(predictors)
 names(par)
 @
 %
-The utility function \code{randompar} generates random parameters for predictors. We 
-have set the total number of predictors as $m=5$, each taking values $0,1,2$ ($L_i=L=3$). 
+The utility function \code{randompar} generates random parameters for 
+predictors. We have set the total number of predictors as $m=5$, each taking
+values $0,1,2$ ($L_i=L=3$). 
 %
 <<sample>>=
 xi <- sample_xi(nsample=10000, predictors=predictors, h=par$h, J=par$J, 
@@ -530,29 +700,30 @@ xi <- sample_xi(nsample=10000, predictors=predictors, h=par$h, J=par$J,
 head(xi)
 @
 %
-The function \code{sample_xi} will list all possible predictor states and sample configurations 
-based on the distribution (\ref{eq:pxy}). The total number of states here is $L^m=3^5$, which is amenable for 
+The function \code{sample_xi} will list all possible predictor states and 
+sample configurations based on the distribution (\ref{eq:pxy}). 
+The total number of states here is $L^m=3^5$, which is amenable for 
 exhaustive enumeration. However, this is possible only for small $m$ and $L$.
 If either are even moderately larger, \code{sample_xi} will hang.
 
 Because there is only one response group, we call the main engine 
-\code{mlestimate} of \pkg{bbl} inference directly instead of \code{train}:
+\code{mlestimate} of \pkg{bbl} inference directly instead of \code{bbl}:
 %
 <<mle>>=
 fit <- mlestimate(xi=xi, method='pseudo',lambda=0)
 names(fit)
 @
 %
-In contrast to \code{train}, which is designed for use with \code{bbl}
-object with multiple response groups and predictors in factors,
+In contrast to \code{bbl} function, which fits a model of 
+multiple response groups and predictors in factors,
 \code{mlestimate} is for a single group and requires input matrix 
 \code{xi} whose elements are integral codes of factors: $a_i=0,\cdots,L_i-1$.
-
 Figure~\ref{fig:par} compares the true and inferred parameters. Here, the
 sample size was large enough that no regularization was necessary.
 
-\begin{figure}[t!]
+\begin{figure}[!ht]
 \centering
+%
 <<par, echo=FALSE, fig=TRUE, height=4.0, width=4.5>>=
 oldpar <- par(mar = c(4,4,1,2),lwd=0.5,cex.axis=0.8,cex.lab=1.0,
               mgp=c(2.2,0.9,0),tck=-0.03)
@@ -563,79 +734,78 @@ axis(side=1, at=seq(-1.5,1.5,0.5), lwd=0.5, las=1)
 axis(side=2, at=seq(-1.5,1.5,0.5), lwd=0.5, las=1)
 segments(x0=-1,x1=1,y0=-1,y1=1, lty=2, lwd=0.7)
 points(x=unlist(par$J), y=unlist(fit$J), pch=24, bg='orange', cex=0.8, lwd=0.7)
-legend(x=0.5,y=-0.5, legend=expression(italic(h), italic(J)), cex=0.8, pch=c(21,24), pt.bg=c('cornflowerblue',
-       'orange'))
+legend(x=0.5,y=-0.5, legend=expression(italic(h), italic(J)), cex=0.8, 
+       pch=c(21,24), pt.bg=c('cornflowerblue','orange'))
 par(oldpar)
 @
+%
 \caption{\small \label{fig:par}
-Comparison of true parameters and those inferred from pseudo-likelihood BB inference.
-See the text for conditions.}
+Comparison of true parameters and those inferred from pseudo-likelihood BB 
+inference. See the text for conditions.}
 \end{figure}
 
 We next simulate a full binary response data set with four-level predictors:
 %
 <<atgc>>=
+nt <- c('a','c','g','t')
 set.seed(135)
-n <- 1000
-for(i in 1:m) predictors[[i]] <- c('a','c','g','t')
-par <- xi <- list()
-for(iy in 1:2){
-  par[[iy]] <- randompar(predictors, h0=0.1*(iy-1), J0=0.1*(iy-1),
-                         distr='unif')
-  xi[[iy]] <- sample_xi(nsample=n, predictors=predictors, h=par[[iy]]$h, 
-                        J=par[[iy]]$J)
-}
-dat <- cbind(rbind(xi[[1]],xi[[2]]), data.frame(y=c(rep('control',n),
-                                                    rep('case',n))))
-model <- bbl(data=dat, groups=c('control','case'))
-model
+for(i in 1:m) predictors[[i]] <- nt
+names(predictors) <- paste0('v',1:m)
+par <- list()
+par[[1]] <- randompar(predictors)
+par[[2]] <- randompar(predictors, h0=0.1, J0=0.1)
+dat <- randomsamp(predictors, response=c('ctrl','case'), par=par, nsample=1000)
 @
 %
-The explicit \code{groups} argument to \code{bbl} overrides the default detection and ordering of response groups 
-from data. We now cross-validate using mean field inference,
+The function \code{randomsamp} generates random samples of 
+\code{predictor}-\code{response} pairs using the supplied \code{par}.
+We perform a cross-validation using mean field inference,
 %
 <<cr-mf>>=
-cv <- crossval(model, method='mf', eps=seq(0,1,0.1),verbose=0)
-head(cv)
+cv <- crossVal(y ~ .^2, data=dat, method='mf', eps=seq(0,1,0.1),verbose=0)
+cv
 @
 %
-Here, \code{train} is called inside \code{crossval} as before but with \code{method = 'mf'}, 
-which triggers mean field inference with Eqs.~(\ref{eq:mf1}) and (\ref{eq:mf}).
+Here, \code{bbl} is called inside \code{crossval} as before but with 
+\code{method = 'mf'}, which triggers mean field inference with 
+Eqs.~(\ref{eq:mf1}) and (\ref{eq:mf}).
 
-As shown in Fig.~\ref{fig:mfcv}{\bf a}, prediction AUC is optimized near $\epsilon=0.8$.
-The difference between AUC at $\epsilon=0$ (naive Bayes limit) and the maximum is a measure of 
-the overall effect of interaction.  We select three values of $\epsilon$ and examine the fit:
+As shown in Fig.~\ref{fig:mfcv}{\bf a}, prediction AUC is optimized near 
+$\epsilon=0.7$. The difference between AUC at $\epsilon=0$ (naive Bayes limit) 
+and the maximum is a measure of the overall effect of interaction.  We select
+three values of $\epsilon$ and examine the fit:
 %
 <<mf-par>>=
 fit <- list()
-eps <- c(0.2, 0.8, 1.0)
+eps <- c(0.2, 0.7, 1.0)
 for(i in seq_along(eps))
-  fit[[i]] <- train(model, method='mf', eps=eps[i], verbose=0)
+  fit[[i]] <- bbl(y ~ .^2, data=dat, method='mf', eps=eps[i], verbose=0)
 @
 %
 
-\begin{figure}[t!]
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}[!ht]
 \centering
 <<cv, echo=FALSE, fig=TRUE, height=5.5, width=6>>=
 oldpar <- par(mfrow=c(2,2),mar = c(4,4,2,2),lwd=0.5,cex.axis=0.8,
               cex.lab=0.9,mgp=c(2.2,0.8,0),tck=-0.03,las=1)
-estar <- cv[cv[,2]==max(cv[,2]),1]
-plot(x=cv$epsilon, y=cv$auc, type='b',xlab=expression(epsilon),ylab='AUC',lwd=0.7,cex=0.7,bty='n')
-segments(x0=estar,x1=estar, y0=0, y1=cv[cv[,1]==estar,2], lty=2, lwd=0.5, col='red')
+estar <- cv$regstar
+plot(x=cv$cvframe$epsilon, y=cv$cvframe$auc, type='b',xlab=expression(epsilon),
+     ylab='AUC',lwd=0.7,cex=0.7,bty='n')
+segments(x0=estar,x1=estar, y0=0, y1=cv$maxscore, lty=2, lwd=0.5, col='red')
 title(adj=0,cex.main=1.2,font=2,main='a')
 
-range <- c(-1.5, 1.5)
 for(i in 1:3){
-  plot(x=c(unlist(par[[1]]$h), unlist(par[[2]]$h)),  y=unlist(fit[[i]]@h), 
-       bg='cornflowerblue', xlim=range, ylim=range, pch=21,
-       cex=0.7, xlab='True', ylab='Inferred', lwd=0.7, xaxt='n',yaxt='n',bty='n')
+  plot(x=c(unlist(par[[1]]$h), unlist(par[[2]]$h)),  y=unlist(coef(fit[[i]])$h), 
+       bg='cornflowerblue', xlim=c(-1.5,1.5), ylim=c(-1.5,1.5), pch=21,
+      cex=0.7, xlab='True', ylab='Inferred', lwd=0.7, xaxt='n',yaxt='n',bty='n')
   axis(side=1, at=seq(-1.5,1.5,0.5), lwd=0.5, las=1)
   axis(side=2, at=seq(-1.5,1.5,0.5), lwd=0.5, las=1)
   segments(x0=-2,x1=2,y0=-2,y1=2, lty=2, lwd=0.7)
-  points(x=c(unlist(par[[1]]$J),unlist(par[[2]]$J)), y=unlist(fit[[i]]@J), pch=24, bg='orange', 
-         cex=0.7, lwd=0.7)
-  if(i==1) legend(x=0.5,y=-0.5, legend=expression(italic(h), italic(J)), cex=0.8, pch=c(21,24), 
-           pt.bg=c('cornflowerblue','orange'))
+  points(x=c(unlist(par[[1]]$J),unlist(par[[2]]$J)), y=unlist(coef(fit[[i]])$J), pch=24, 
+         bg='orange', cex=0.7, lwd=0.7)
+  if(i==1) legend(x=0.5,y=-0.5, legend=expression(italic(h), italic(J)), cex=0.8,
+                  pch=c(21,24), pt.bg=c('cornflowerblue','orange'))
   title(adj=0,main=letters[i+1],cex.main=1.1,font=2)
   mtext(side=3,line=1.0,cex=0.8,bquote(epsilon==.(eps[i])),adj=0.5)
 }
@@ -644,81 +814,144 @@ par(oldpar)
 \caption
 {\small 
 Regularized mean field inference using simulated data.
-({\bf a}) Cross-validation AUC with respect to regularization parameter $\epsilon$.
-({\bf b}-{\bf d}) Comparison of true and inferred parameters under three $\epsilon$ values. 
+({\bf a}) Cross-validation AUC with respect to regularization parameter %$\epsilon$.
+({\bf b}-{\bf d}) Comparison of true and inferred parameters under three %$\epsilon$ values. 
 Best fit is achieved when AUC is maximum.}
 \label{fig:mfcv}
 \end{figure}
 
-Figure~\ref{fig:mfcv}{\bf b}-{\bf d} compares the three inferred parameter sets \code{(fit[[i]]@h, fit[[i]]@J)} 
+Figure~\ref{fig:mfcv}{\bf b}-{\bf d} compares the three inferred parameter sets \code{(coef(fit[[i]])$h, coef(fit[[i]])$J)} 
 with the true values \code{(par[[iy]]\$h, par[[iy]]\$J)}. As $\epsilon$ increases from 0 to 1, 
 interaction parameter $J$ grows from zero to large, usually overfit levels. We verify that
-the bias and variance strike the best balance under $\epsilon=0.8$ (Fig.~\ref{fig:mfcv}{\bf c}),
+the bias and variance strike the best balance under $\epsilon=0.7$ 
+(Fig.~\ref{fig:mfcv}{\bf c}),
 as suggested by cross-validation AUC in Fig.~\ref{fig:mfcv}{\bf a}.
+
+\subsection{Genetic code}
+We consider a different learning task example with a much larger space of
+response groups, namely those of amino acides ($K=21$, which
+include 20 amino acids 
+plus stop signal (`*'), encoded by DNA sequences ($x_i=\sf{a,c,g,t}$).
+In DNA sequences, three nucleotides combine to encode specific amino acids. 
+We will train a model attempting to discover this genetic code from data.
+%
+<<ntaa>>=
+set.seed(351)
+n <- 2000
+dat <- data.frame(b1=sample(nt, size=n, replace=TRUE),
+                  b2=sample(nt, size=n, replace=TRUE),
+                  b3=sample(nt, size=n, replace=TRUE))
+head(dat)
+@
+%
+In the above, we generated random instances of triplet codons for training.
+We use the package \pkg{Biostrings} \citep{pages_etal}
+to translate it into amino acids:
+%
+<<biostrings>>=
+if(!require('Biostrings',character.only=TRUE)){
+  if(!require('BiocManager',character.only=TRUE))
+    install.packages('BiocManager')
+  BiocManager::install('Biostrings')
+}
+aa <- Biostrings::DNAString(paste(t(dat), collapse=''))
+aa
+aa <- strsplit(as.character(Biostrings::translate(aa)), split='')[[1]]
+xdat <- cbind(data.frame(aa=aa),dat)
+head(xdat)
+@
+%
+
+We now cross-validate using \pkg{bbl}:
+%
+<<aacv>>=
+cv <- crossVal(aa ~ .^2, data=xdat, lambda=10^seq(-3,1,0.5), verbose=0)
+cv
+@
+%
+Note that with the multinomial response group, the score used is 
+Eq.~(\ref{eq:s}). The class \code{cv.bbl} extends \code{bbl} and
+stores the model with the optimal $\lambda$.
+In contrast to Sec.~\ref{sec:bb}, we do not refit the model under this $\lambda$
+because the score is maximum.
+Testing can use all possible codon sequences ($4^3=64$ total):
+%
+<<codon>>=
+panel <- expand.grid(b1=nt, b2=nt, b3=nt)
+head(panel)
+dim(panel)
+p <- predict(cv, panel)
+ap <- Biostrings::DNAString(paste(t(panel), collapse=''))
+ap <- strsplit(as.character(Biostrings::translate(ap)), split='')[[1]]
+score <- mean(ap==p$yhat)
+score
+@
+%
+The trained model has perfect prediction score of 1 and will not 
+make mistakes in any translation of DNA sequences. 
 
 \subsection{Image data}
 
-\begin{figure}[t!]
+\setkeys{Gin}{width=0.5\textwidth}
+\begin{figure}[t]
 \centering
 \includegraphics[scale=0.8]{mnist_mf}
-\caption{\small Cross-validation of BB inference on MNIST data using mean field option.
+\caption{\small Cross-validation of BB inference on MNIST data using mean field %option.
 Sample sizes are for down-sampled example and full data sets, respectively.}
 \label{fig:mnist}
 \end{figure}
 
-Advantages of \pkg{bbl} over regression become more apparent when dealing with large data sets
-and predictors numbering $\sim 100$ or more.
-Here, we consider the MNIST data set (\url{yann.lecun.com/exdb/mnist/})
-widely used for benchmarking classification algorithms \citep{lecun_etal}.
-Each sample in this data set contains grayscale levels ($x_i=[0,255]$) derived from an image of
+We next consider learning examples with data sets containing 
+predictors numbering $\sim 100$ or more. The  
+the MNIST data set (\url{yann.lecun.com/exdb/mnist/}),
+widely used for benchmarking classification algorithms \citep{lecun_etal},
+contains image data of grayscale levels ($x_i=[0,255]$) derived from 
 hand-written digits ($y_k=0,\cdots,9$) for $m=28\times 28=784$ pixels.
-We use down-sampled training ($n=1,\!000$) and test($n=500$) data sets, where grayscale has been 
-transformed into binary predictors ($x_i=0,1$):
+We use down-sampled training ($n=1,\!000$) and test ($n=500$) data sets, 
+where grayscale has been transformed into binary predictors ($x_i=0,1$):
 %
-<<mnist>>=
+<<mnist, eval=FALSE>>=
 dat <- read.csv(system.file('extdata/mnist_train.csv',package='bbl'))
+dat <- removeConst(dat)
 dat[1:5,1:10]
-mnist <- bbl(data=dat)
-mnist
+cv <- crossVal(y ~ .^2, data=dat, method='mf', eps=0.04)
 @
 %
-Note that when the object is created, the predictors without factor variations
-(pixels that are always empty) are dropped from data.
-%
-<<mnist2, eval=FALSE>>=
-cv <- crossval(mnist, method='mf', eps=0.1)
-@
-%
-The above run will take a few minutes. By feeding a vector of $\epsilon$ values, one can obtain
-the profile shown in Fig.~\ref{fig:mnist} (white symbols). The substantial jump in 
-performance under $\epsilon^*\sim 0.1$ over $\epsilon \rightarrow 0$ (naive Bayes) limit 
-gives a measure of interaction effects.
-The relatively small value of $\epsilon^*$ at the optimal condition,
-compared to e.g., Fig.~\ref{fig:mfcv}{\bf a}, reflects the sparseness of image 
-data. 
+Note that before calling \code{crossVal}, we removed predictors without factor
+variations (pixels that are always empty) using the utility function 
+\code{removeConst}. By default, error will occur inside \code{crossVal} 
+otherwise. 
 
-We now retrain the model without cross-validation under $\epsilon^*$ and classify test set 
-(also down-sampled to $n=500$) images:
+The above run will take a few minutes. By feeding a vector of 
+$\epsilon$ values, one can obtain the profile shown in Fig.~\ref{fig:mnist} 
+(white symbols). The jump in performance under $\epsilon^*\sim 0.04$
+over $\epsilon \rightarrow 0$ (naive Bayes) limit gives a measure of interaction
+effects. The relatively small value of $\epsilon^*$ at the optimal condition,
+compared to e.g., Fig.~\ref{fig:mfcv}{\bf a}, reflects the sparseness of 
+image data. 
+
+We now retrain the model without cross-validation under $\epsilon^*$ and 
+classify test set (also down-sampled to $n=500$) images:
 %
 <<mnist3, eval=FALSE>>=
-mnist <- train(mnist, method='mf', eps=0.1)
+mnist <- bbl(y ~ .^2, data=dat, method='mf', eps=cv$regstar)
 dtest <- read.csv(system.file('extdata/mnist_test.csv',package='bbl'))
-dtest <- dtest[,colnames(dtest) %in% colnames(mnist@data)]
+dtest <- dtest[,colnames(dtest) %in% colnames(dat)]
 pr <- predict(mnist, newdata=dtest[,-1], progress.bar=FALSE)
-yhat <- colnames(pr)[apply(pr, 1, which.max)]
-mean(yhat==dtest$y)
+mean(pr$yhat==dtest$y)
 @
 %
-Since \code{mnist} dropped a subset of original predictors, the test data must be filtered accordingly. 
-Note the increase in test score compared to cross-validation score because of the use of full 
-training data. Set \code{progress.bar = TRUE} to monitor the progress in a slow \code{predict} run.
+Since \code{mnist} dropped a subset of original predictors, the test data must
+be filtered accordingly. Note the increase in test score compared to 
+cross-validation score because of the use of full training data. 
+Set \code{progress.bar = TRUE} to monitor the progress in a slow 
+\code{predict} run.
 
 We performed similar cross-validation and test analyses of the full MNIST data 
-(training $n=60,\!000$ and test $n=10,\!000$; Fig.~\ref{fig:mnist}, red symbols) 
-and obtained the test 
-score of $0.932$ (classification error rate $6.8\%$), which compares favorably 
-with some of the best-performing large-scale neural network algorithms 
-\citep{lecun_etal,salakhutdinov_hinton} (Table.~\ref{tb:mnist}).
+(training $n=60,\!000$ and test $n=10,\!000$; Fig.~\ref{fig:mnist}, 
+red symbols) and obtained the test score of $0.916$ 
+(classification error rate $8.4\%$), which compares favorably 
+with some of the large-scale neural network algorithms (Table.~\ref{tb:mnist}).
 
 \begin{table}[t!]
 \centering
@@ -729,8 +962,8 @@ Linear classifier   & 1-layer NN       & $12.0$        & \cite{lecun_etal}\\
 K-nearest neighbors & Euclidean (L2)   & $5.0$         & \cite{lecun_etal}\\
 2-layer NN          & 300 hidden units & $4.7$         & \cite{lecun_etal}\\
 RBM                 & 2-layer          & $0.95$        & \cite{salakhutdinov_hinton}\\
-Naive Bayes         & Mean field ($\epsilon=0$) & $16.2$ &  \pkg{bbl}                 \\
-BB                  & Mean field ($\epsilon=0.05$)      & $6.8$         &    \pkg{bbl}               \\
+Naive Bayes         & Mean field ($\epsilon=0$) & $15.7$ &  \pkg{bbl}                 \\
+BB                  & Mean field ($\epsilon=0.05$)      & $8.4$         &    \pkg{bbl}               \\
 \hline
 \end{tabular}
 \caption{\small \label{tb:mnist} Performance comparison of BB inference and other models on MNIST data set.
@@ -739,27 +972,27 @@ BB, Boltzmann Bayes; NN, neural network; RBM, restricted Boltzmann machine.}
 
 \subsection{Transcription factor binding site data}
 \label{sec:tfbs}
-One of machine learning tasks of considerable interest in biomedical applications is the 
-detection of transcription factor binding sites within genomic sequences \citep{wasserman_sandelin}.
-Transcription factors are proteins that bind to specific DNA sequence segments and regulate
-gene expression programs.
-Public databases, such as JASPAR \citep{jaspar2018}, host known transcription factors and their 
-binding sequence motifs. Supervised learners allow users to leverage these data sets and search for
-binding motifs from candidate sequences.
+One of machine learning tasks of considerable interest in biomedical
+applications is the detection of transcription factor binding sites within
+genomic sequences \citep{wasserman_sandelin}.Transcription factors are
+proteins that bind to specific DNA sequence segments and regulate
+gene expression programs. Public databases, such as 
+JASPAR \citep{jaspar2018}, host known transcription factors and their 
+binding sequence motifs. Supervised learners allow users to leverage these
+data sets and search for binding motifs from candidate sequences.
 
 Here, we illustrate such an inference using an example set 
 (MA0014.3) of binding motif sequences from JASPAR
 (\url{http://jaspar.genereg.net}):
 %
 <<jaspar>>=
-seq <- read.fasta(system.file('extdata/MA0014.3.fasta',package='bbl'))
+seq <- readFasta(system.file('extdata/MA0014.3.fasta',package='bbl'))
 head(seq)
 dim(seq)
 @
 %
-The data set consists of common nucleotide segments from $n=948$ raw sequences used for motif discovery.
-The function \code{read.fasta} will read a FASTA format file and turn it into a data frame.
-We simulate a training set by generating non-binding sequences with random mutation of 3 nucleotides:
+The data set consists of common nucleotide segments from $n=948$ raw sequences
+used for motif discovery. We simulate a training set by generating non-binding sequences with random mutation of 3 nucleotides:
 %
 <<jaspar2>>=
 set.seed(561)
@@ -767,7 +1000,7 @@ nsample <- NROW(seq)
 m <- NCOL(seq)
 nt <- c('A','C','G','T')
 ctrl <- as.matrix(seq)
-for(k in seq(nsample))
+for(k in seq_len(nsample))
   ctrl[k, sample(m,3)] <- sample(nt, 3, replace=TRUE)
 colnames(ctrl) <- 1:m
 data <- rbind(data.frame(y=rep('Binding', nsample), seq), 
@@ -778,46 +1011,53 @@ data <- data[sample(NROW(data)), ]
 We assess the performance of pseudo-likelihood and mean field inferences below using cross-validation:
 %
 <<jaspar3>>=
-model <- bbl(data=data)
-model
-ps <- crossval(model, method='pseudo', lambda=10^seq(-1,-2,-0.2), verbose=0)
+ps <- crossVal(y~.^2, data=data, method='pseudo', lambda=10^seq(-2,-1,0.2),
+               verbose=0)
 ps
-mf <- crossval(model, method='mf', eps=seq(0.1,0.4,0.1),verbose=0)
+mf <- crossVal(y~.^2, data=data, method='mf', eps=seq(0.1,0.4,0.1),
+               verbose=0)
 mf
 @
 %
 In both cases, there is an optimal, intermediate range of regularization with
-maximum AUC (Fig.~\ref{fig:jaspar}). The level of performance attainable with non-interacting models, such as position frequency matrix \citep{wasserman_sandelin}, 
+maximum AUC (Fig.~\ref{fig:jaspar}). 
+The level of performance attainable with non-interacting models, 
+such as position frequency matrix \citep{wasserman_sandelin}, 
 corresponds to the $\epsilon=0$ limit in Fig.~\ref{fig:jaspar}{\bf b}.
-The AUC range obtained above is representative of the sensitivity and specificity levels one would get
-when scanning a genomic segment using a trained model for detection of a binding site to within 
-the resolution of $\sim 3$~base pairs.
+The AUC range obtained above is representative of the sensitivity and 
+specificity levels one would get when scanning a genomic segment using 
+a trained model for detection of a binding site to within resolution of
+$\sim 3$~base pairs.
 
-\begin{figure}[t!]
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}[t]
 \centering
 \includegraphics[scale=0.8]{tfbf}
-\caption{\small Cross-validation of discrete BB model on transcription factor binding motif data with control sequences generated by 3 nucleotide mutations.
-Data set is from \cite{jaspar2018} (sample ID MA0014.3; see text).
+\caption{\small Cross-validation of transcription factor binding motif 
+model using \pkg{bbl} with control sequences generated by 3 nucleotide
+mutations. Data set is from \cite{jaspar2018} (sample ID MA0014.3; see text).
 ({\bf a}) Pseudo-likelihood and ({\bf b}) mean field inferences.}
 \label{fig:jaspar}
 \end{figure}
 
-We analyzed 856 data sets from JASPAR database of varying sample
-sizes and segment lengths with 
-the same protocol. Differences between fully optimized AUC scores and those from non-interacting models (naive Bayes) were most pronounced above the
-intermediate range of AUC, and were 
+We analyzed 684 data sets with at least 30 sequences from JASPAR database 
+of varying sample
+sizes and segment lengths with the same protocol. Differences between fully
+optimized AUC scores and those from non-interacting models (naive Bayes) were
+most pronounced above the intermediate range of AUC, and were 
 independent of segment lengths (Fig.~\ref{fig:tfbs}{\bf a}).
 Pseudo-likelihood results had better scores compared to mean field on avarge (Fig.~\ref{fig:tfbs}{\bf b}).
 
-\begin{figure}[t!]
+\begin{figure}[t]
 \centering
 \includegraphics[scale=1]{tfbs}
 \caption{\small 
 AUC scores of \pkg{bbl} model trained on 856 transcription factor binding site
-sequence data sets from JASPAR \citep{jaspar2018} under the same protocol as in Fig.~\ref{fig:jaspar}.
-({\bf a}) Comparison of naive Bayes (NB; mean field with $\epsilon=0$) and full mean field (MF) results. 
-({\bf b}) Comparison of mean field (MF) and pseudo-likelihood 
-maximization (pseudo-L) scores. The symbol colors show the segment length of each
+sequence data sets from JASPAR \citep{jaspar2018} under the same protocol as 
+in Fig.~\ref{fig:jaspar}. ({\bf a}) Comparison of naive Bayes (NB; mean field
+with $\epsilon=0$) and full mean field (MF) results. 
+({\bf b}) Comparison of mean field (MF) and pseudo-likelihood maximization
+(pseudo-L) scores. The symbol colors show the segment length of each
 binding site data (color-map in {\bf a}).
 }
 \label{fig:tfbs}
@@ -831,31 +1071,39 @@ associated with a discrete multi-class response variable.
 The currently available \proglang{R} package \pkg{BoltzMM} is limited
 to fitting data into a single fully visible Boltzmann distribution
 without reference to response variables, and assumes binary 
-predictors. The package \pkg{bbl} extends the basic statistical distribution to accommodate 
-heterogeneous, factor-valued predictors via 
-Eq.~(\ref{eq:pxy}), embedding it in a Bayesian classifier for supervised learning and prediction.
+predictors. The package \pkg{bbl} employs a more general statistical 
+distribution accommodating heterogeneous, factor-valued predictors via 
+Eq.~(\ref{eq:pxy}), embedding it in a Bayesian classifier to build 
+supervised learning and prediction models. The basic implementation
+architecture \pkg{bbl} follows those of standard base \proglang{R} packages
+such as \pkg{glm}.
 
 Compared to more widely applied restricted Boltzmann machine algorithms
 \citep{hinton}, the BB model explicitly infers interaction parameters 
 for all pairs of predictors, making it possible to interpret trained 
-models directly. Tests on MNIST suggest performances comparable to other 
-deep layer neural network models in 
-classification tests. It is especially suited to data types where a 
+models directly, as illustrated in Fig.~\ref{fig:plot}.
+Tests on MNIST suggest performance scores similar to other deep layer neural 
+network models in classification tests. 
+However, BB inference is especially suited to data types where a 
 moderate number of unordered features (such as nucleotide sequences) combine to determine class identity, as in transcription factor binding motifs 
 (Sec.~\ref{sec:tfbs}). Among the two options for inference methods, mean field
 (\code{method = `mf'}) is faster but can become memory intensive for models 
 with a large number of predictors. Pseudo-likelihood maximization 
-(\code{method = 'pseudo'}) is slower but generally performs better.
+(\code{method = 'pseudo'}) is slower but generally provides better performance.
 
 %% -- Optional special unnumbered sections -------------------------------------
 
 \section*{Computational details}
 
+The current version of \pkg{bbl} is available at the
+Comprehensive \proglang{R} Archive Network (CRAN) at
+\url{https://CRAN.R-project.org/package=bbl}.
 Installation of \pkg{bbl} requires the GNU Scientific library 
 \url{https://www.gnu.org/software/gsl} installed. The results in this paper 
-were obtained using \proglang{R}~\Sexpr{paste(R.Version()[6:7], collapse = ".")}. \proglang{R} itself 
-and all packages used are available from the Comprehensive
-\proglang{R} Archive Network (CRAN) at \url{https://CRAN.R-project.org/}.
+were obtained using \proglang{R}~\Sexpr{paste(R.Version()[6:7], collapse = ".")}.
+\proglang{R} itself and all packages used are available from the CRAN
+at \url{https://CRAN.R-project.org/} and at Bioconductor at
+\url{https://bioconductor.org}.
 
 \bibliography{refs}
 

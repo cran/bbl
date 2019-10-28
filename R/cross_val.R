@@ -10,14 +10,19 @@
 #' prediction score is evaluated using the known response group
 #' identity.
 #' 
-#' @param object Object of class \code{bbl} containing data.
+#' @param formula Formula for model. Note that intercept has no effect.
+#' @param data Data frame of data. Column names must match \code{formula}.
+#' @param freq Frequency vector of how many times each row of \code{data} must
+#'        be repeated. If \code{NULL}, defaults to vector of 1s. 
+#'        Fractional values are not supported.
+#' @param novarOk Proceed even when there are predictors with only one factor level.
 #' @param lambda Vector of L2 penalizer values for \code{method = 'pseudo'}. Inferences
 #'        will be repeated for each value. Restricited to non-negative values.
 #' @param lambdah L2 penalizer in \code{method = 'pseudo'} applied to
 #'        parameter \code{h}. In contrast to \code{lambda}, 
 #'        only a single value is allowed.
 #' @param eps Vector of regularization parameters, \eqn{\epsilon\in[0,1]}, 
-#'        for \code{method = 'mf'}. Inference will be repeeated
+#'        for \code{method = 'mf'}. Inference will be repeated
 #'        for each value.
 #' @param nfold Number of folds for training/validation split.
 #' @param method \code{c('pseudo','mf')} for pseudo-likelihood maximization or
@@ -27,43 +32,81 @@
 #' @param use.auc Use AUC as the measure of prediction accuracy. Only works
 #'        if response groups are binary. If \code{FALSE}, mean prediction group
 #'        accuracy will be used as score.
-#' @param verbose Verbosity level. Downgraded when relayed into \code{\link{train}}.
-#' @param useC Use \code{C++} version in \code{\link{predict}} method of \code{bbl}.
-#' @param prior.count Use prior count in \code{method = 'mf'}.
+#' @param verbose Verbosity level. Downgraded when relayed into \code{\link{bbl}}.
 #' @param progress.bar Display progress bar in \code{\link{predict}}.
-#' @param fixL Do not alter the levels of predictors in training step.
+#' @param storeOpt Store the optimal fitted object of class \code{\link{bbl}}.
 #' @param ... Other parameters to \code{\link{mlestimate}}.
-#' @return Data frame of regularization parameter values and validation scores.
+#' @return Object of class \code{cv.bbl} extending \code{\link{bbl}}, a list
+#'         with extra components
+#'         \item{regstar}{Value of regularization parameter, \code{lambda}
+#'         and \code{eps} for \code{method='pseudo'} and \code{method='mf'},
+#'         respectively, at which the accuracy score is maximized}
+#'         \item{maxscore}{Value of maximum accuracy score}
+#'         \item{cvframe}{Data frame of regularization parameters and scores scanned}
+#'         The components of \code{\link{bbl}} store the optimal model trained
+#'         if \code{storeOpt=TRUE}.
 #' @examples
 #' set.seed(513)
 #' m <- 5
 #' n <- 100
 #' predictors <- list()
 #' for(i in 1:m) predictors[[i]] <- c('a','c','g','t')
-#' 
-#' par0 <- randompar(predictors)
-#' xi0 <- sample_xi(nsample=n, predictors=predictors, h=par0$h, J=par0$J)
-#' par1 <- randompar(predictors, h0=0.1, J0=0.1)
-#' xi1 <- sample_xi(nsample=n, predictors=predictors, h=par1$h, J=par1$J)
-#' xi <- rbind(xi0, xi1)
-#' dat <- cbind(xi, data.frame(y=c(rep('control',n),rep('case',n))))
-#' model <- bbl(data=dat, groups=c('control','case'))
-#' 
-#' cv <- crossval(object=model, method='mf', eps=seq(0.1,0.9,0.1))
-#' plot(cv, type='b')
+#' names(predictors) <- paste0('v',1:m)
+#' par <- list(randompar(predictors), randompar(predictors, h0=0.1, J0=0.1))
+#' dat <- randomsamp(predictors, response=c('ctrl','case'), par=par, nsample=n)
+#' cv <- crossVal(y ~ .^2, data=dat, method='mf', eps=seq(0.1,0.9,0.1))
+#' cv
 #' @export
-crossval <- function(object, lambda=0.1, lambdah=0,
-                     eps=0.9, nfold=5, method='pseudo', 
-                     naive=FALSE, use.auc=TRUE, verbose=1, useC=TRUE, 
-                     prior.count=TRUE, progress.bar=FALSE, 
-                     fixL=FALSE, ...){
+crossVal <- function(formula, data, freq=NULL, novarOk=FALSE, 
+                     lambda=1e-5, lambdah=0, eps=0.9, nfold=5, 
+                     method='pseudo', naive=FALSE, use.auc=TRUE, 
+                     verbose=1, progress.bar=FALSE, storeOpt=TRUE, ...){
   
-  groups <- object@groups
+  
+  cl <- match.call()
+  if(missing(data)) data <- environment(formula)
+  if(!is.null(freq)){
+    if(length(freq)!=NROW(data))
+      stop('Length of freq does not match data')
+    zero <- freq==0
+    data <- data[!zero,]
+    freq <- freq[!zero]   # remove rows with zero freq
+  }
+# data <- as.data.frame(lapply(data, function(x) if(is.numeric(x)) factor(x)))
+  term <- terms(formula, data=data)
+  idy <- attributes(term)$response
+  vars <- as.character(attributes(term)$variables)
+  resp <- vars[[idy+1]]
+  vars <- vars[!(vars %in% c('list',resp))]
+# xlevels <- .getXlevels(term, m=data)
+  xlevels <- getxlevels(vars, data=data)
+  formula <- formula(term)
+  for(i in seq_along(xlevels)){
+    if(length(xlevels[[i]])==1){
+      mesg <- paste0('Predictor ',names(xlevels)[i],' has one level')
+      if(novarOk)
+        warning(mesg)
+      else
+        stop(mesg)
+    }
+  }
+  m <- length(xlevels)
+
+  y <- data[,resp]
+  yx <- data[,c(resp,names(xlevels))]
+  groups <- levels(factor(y))
   Ly <- length(groups)
-  nsample <- NROW(object@data)
-  y <- object@data[,which(object@y==colnames(object@data))]
   
+  if(Ly==1) warning('Only one response group in data')
   if(Ly!=2) use.auc <- FALSE
+  
+  if(!is.null(freq)){
+    if(!all.equal(freq, as.integer(freq))) stop('Non-integer freq')
+    if(length(freq)!=NROW(data))
+      stop('Length of freq does not match data')
+    yx <- freq2raw(data=yx, freq=freq)
+    y <- yx[,resp]
+  }
   
   if(naive){
     method <- 'mf'
@@ -81,7 +124,10 @@ crossval <- function(object, lambda=0.1, lambdah=0,
   }
   else stop('Unknown method')
   
-  res <- NULL
+  res <- NULL    # data frame of cv result
+  bbopt <- NULL  # optimally trained bbl object
+  maxscore <- -Inf
+  regstar <- 0
   for(reg in reglist){
     if(is.null(lambdah)) regh <- reg
     else regh <- lambdah
@@ -104,47 +150,82 @@ crossval <- function(object, lambda=0.1, lambdah=0,
         ns <- length(idy)
         nval <- max(1,floor(ns/nfold))
         imax <- k*nval
-        if(imax > ns) imax <- ns
+        if(imax > ns | k==nfold) imax <- ns
         if(imax < 1) imax <- 1
         iyval <- idy[seq((k-1)*nval+1, imax)]
         iytrain <- idy[!idy %in% iyval]
         ival <- c(ival, iyval)
         itrain <- c(itrain, iytrain)
       }
-      if(sum(is.na(ival)>0) | sum(is.na(itrain)>0)) stop('error in crossval')
-      obval <- '['(x=object, i=ival, remove.const=FALSE)
-      obtrain <- '['(x=object, i=itrain, remove.const=FALSE)
+      if(sum(is.na(ival)>0) | sum(is.na(itrain)>0)) 
+        stop('Error in train/validation division')
+      if(length(ival)==0 | length(itrain)==0)
+        stop('Sample size too small for nfold requested')
+      dval <- yx[ival, ,drop=FALSE]
+      dtrain <- yx[itrain, ,drop=FALSE]
       if(method=='pseudo')
-        obtrain <- train(object=obtrain, method=method, lambda=reg,  
-                         naive=naive, verbose=verbose-1, lambdah=regh,
-                         fixL=fixL, ...)
+        obtrain <- bbl(formula, data=dtrain, xlevels=xlevels, 
+                       method=method, novarOk=TRUE, 
+                       testNull=FALSE, lambda=reg, 
+                       verbose=verbose-1, lambdah=regh, ...)
       else
-        obtrain <- train(object=obtrain, method=method, eps=reg,
-                         naive=naive, verbose=verbose-1, lambdah=lambdah,
-                         fixL=fixL, ...)
-      pr <- predict(object=obtrain, newdata=obval@data, logit=!use.auc,
-                    useC=useC, progress.bar=progress.bar, 
-                    verbose=verbose-1, naive=naive)
-      pred <- rbind(pred, cbind(data.frame(y=y[ival], pr)))
+        obtrain <- bbl(formula, data=dtrain, xlevels=xlevels,
+                       method=method, novarOk=TRUE, 
+                       testNull=FALSE, eps=reg, 
+                       verbose=verbose-1, lambdah=lambdah, ...)
+
+      pr <- predict(object=obtrain, newdata=dval, logit=!use.auc,
+                          progress.bar=progress.bar, verbose=verbose-1)
+      yxv <- data.frame(ytrue=factor(yx[ival,1],levels=groups))
+      pred <- rbind(pred, cbind(yxv, pr))
     }
-    if(use.auc){ auc <- pROC::roc(response=pred$y, levels=groups, 
+    if(use.auc){
+      score <- pROC::roc(response=pred[,1], levels=groups, 
                                predictor=pred[,3], direction='<')$auc
-      if(verbose>0) cat(' AUC = ',auc,'\n',sep='')
+      if(verbose>0) cat(' AUC = ',score,'\n',sep='')
     }
     else{
-      yhat <- groups[apply(pred[,-1],1,which.max)]
-      score <- mean(pred$y==yhat)
+      score <- mean(pred[,1]==pred$yhat)
       if(verbose>0) cat(' Prediction score = ',score,'\n',sep='')
     }
     if(method=='pseudo'){
-      if(use.auc) rx <- data.frame(lambda=reg, auc=auc)
+      if(use.auc) rx <- data.frame(lambda=reg, auc=score)
       else rx <- data.frame(lambda=reg, score=score)
     } else{
-      if(use.auc) rx <- data.frame(epsilon=reg, auc=auc)
+      if(use.auc) rx <- data.frame(epsilon=reg, auc=score)
       else rx <- data.frame(epsilon=reg, score=score)
+    }
+    if(score > maxscore){
+      maxscore <- score
+      regstar <- reg
+      if(storeOpt) bbopt <- obtrain
     }
     res <- rbind(res, rx)
   }
   
-  return(res)
+  cv <- c(bbopt, list(regstar=regstar, maxscore=maxscore, cvframe=res))
+  class(cv) <- 'cv.bbl'
+  
+  return(cv)
+}
+
+getxlevels <- function(vars, data){
+  
+  m <- length(vars)
+  xlevels <- vector('list',m)
+  names(xlevels) <- vars
+  for(i in seq_along(vars)){
+    if(!vars[i] %in% colnames(data)) 
+      stop(paste0("'",vars[i],"' not in data"))
+    v <- data[,vars[i]]
+    if(is.factor(v) | is.character(v)){
+      lv <- levels(factor(v))
+      xlevels[[i]] <- lv[order(lv)]
+    }
+    else{
+      v <- unique(v)
+      xlevels[[i]] <- v[order(v)]
+    }
+  }
+  return(xlevels)
 }

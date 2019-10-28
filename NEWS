@@ -1,0 +1,6 @@
+* bbl 0.2.0
+** Summary of changes
+- Changed from S4 to S3 object (bbl)
+- Function call to bbl() uses formula and data input and fits model directly
+- Methods print.bbl(), summary.bbl(), plot.bbl(), and predict.bbl() are for S3 object bbl
+- CrossVal runs multiple calls to bbl() and generates derived object

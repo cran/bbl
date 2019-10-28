@@ -4,18 +4,21 @@
 \alias{mlestimate}
 \title{Maximum likelihood estimate}
 \usage{
-mlestimate(xi, method = "pseudo", L = NULL, lambda = 1e-05,
-  lambdah = 0, symmetrize = TRUE, eps = 0.9, nprint = 100,
-  itmax = 10000, tolerance = 1e-05, verbose = 1,
+mlestimate(xi, freq = NULL, qJ = NULL, method = "pseudo", L = NULL,
+  lambda = 1e-05, lambdah = 0, symmetrize = TRUE, eps = 0.9,
+  nprint = 100, itmax = 10000, tolerance = 1e-05, verbose = 1,
   prior.count = TRUE, naive = FALSE, lz.half = FALSE)
 }
 \arguments{
-\item{xi}{Data matrix. In contrast to \code{data} slot in \code{\link{bbl}}
-object, this matrix is always numeric with elements ranging from
-zero to positive integral upper bound \code{L-1}.
-\code{\link{train}} does
-the transformation from factors to this numeric matrix for
-\code{bbl} objects.}
+\item{xi}{Data matrix; expected to be numeric with elements ranging from
+zero to positive integral upper bound \code{L-1}.}
+
+\item{freq}{Frequency vector of number of times each row of \code{xi}
+is to be repeated. If \code{NULL}, defaults to 1. Expected
+to be non-negative integers.}
+
+\item{qJ}{Matrix of logicals indicating which predictor pairs are
+interacting. If \code{NULL}, all are allowed.}
 
 \item{method}{\code{c('pseudo','mf')} for pseudo-likelihood maximization or
 mean field inference.}
@@ -46,7 +49,7 @@ values before termiating iteration in \code{'pseudo'}.}
 
 \item{verbose}{Verbosity level.}
 
-\item{prior.count}{Use prior count for \code{method = 'mf'} to reduce
+\item{prior.count}{Use prior count of 1 for \code{method = 'mf'} to reduce
 numerical instability.}
 
 \item{naive}{Naive Bayes inference. Equivalent to \code{method = 'mf'} together
@@ -66,7 +69,7 @@ Perform inference of bias and interaction parameters for a single response group
 Given numeric data matrix, either pseudo-likelihood
 of mean-field theory is used to find the maximum likelihood estimate
 of bias \code{h} and interaction \code{J} parameters. Normally
-called by \code{\link{train}} rather than directly.
+called by \code{\link{bbl}} rather than directly.
 }
 \examples{
 set.seed(535)

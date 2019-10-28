@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample.R
 \name{sample_xi}
 \alias{sample_xi}
-\title{Generate Random Samples from BB model}
+\title{Generate Random Samples from Boltzmann Distribution}
 \usage{
 sample_xi(nsample = 1, predictors = NULL, h, J, code_out = FALSE)
 }

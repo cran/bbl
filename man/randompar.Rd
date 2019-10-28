@@ -2,7 +2,7 @@
 % Please edit documentation in R/sample.R
 \name{randompar}
 \alias{randompar}
-\title{Generate random bias and interaction parameters}
+\title{Generate Random Parameters}
 \usage{
 randompar(predictors, distr = "unif", h0 = 0, dh = 1, J0 = 0,
   dJ = 1)

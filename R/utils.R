@@ -5,83 +5,32 @@
 #' 
 #' The ouput data frame can be used as input to \code{\link{bbl}}.
 #' 
-#' @param fdata Data frame with factors in columns and a frequency column
-#' @param Freq Integer column index or column name of frequency
-#' @return Raw data frame with one row per instances
+#' @param data Data frame with factors in columns 
+#' @param freq Vector of frequency of each row in \code{data}
+#' @return Data frame with one row per instances
 #' @examples
 #' Titanic
 #' x <- as.data.frame(Titanic)
 #' head(x)
-#' titanic <- freq2raw(x, Freq='Freq')
+#' titanic <- freq2raw(data=x[,1:3], freq=x$Freq)
 #' head(titanic)
 #' @export
-freq2raw <- function(fdata,Freq){
+freq2raw <- function(data,freq){
   
-  if(is.character(Freq)) 
-    Freq <- which(colnames(fdata)==Freq)
-  if(length(Freq)==0) stop('No frequency column found')
-  n <- nrow(fdata)
+  if(length(freq)!=NROW(data)) 
+     stop('Frequency length does not match data')
+  n <- nrow(data)
   dat <- NULL
   for(i in 1:n){
-    w <- fdata[rep(i,fdata[i,Freq]),]
+    w <- data[rep(i,freq[i]),]
     dat <- rbind(dat, w)
   }
   rownames(dat) <- seq_len(NROW(dat))
-  return(dat[,-Freq])
+  return(dat)
 }
 
-#' Compute Prediction Accuracy
-#' 
-#' Accuracy of predicted response probability is computed.
-#' 
-#' An option is provided for computing group-balanced accuracy, where
-#' prediction score is calculated for each group separately and averaged.
-#' @param object Object of class \code{bbl} with test data in \code{data} slot.
-#' @param prediction Data frame of predicted response group probability from
-#'        \code{\link{predict}}.
-#' @param balanced Compute balanced accuracy. If \code{TRUE},
-#'        \deqn{s = \frac{1}{K}\sum_y \frac{1}{n_y} \sum_{k\in y}
-#'        \delta\left({\hat y}_k = y\right).}
-#'        If \code{FALSE},
-#'        \deqn{s = \frac{1}{n}\sum_{k}
-#'        \delta\left({\hat y}_k = y_k\right).}
-#' @return List of \code{acc} (accuracy score) and \code{yhat} (predicted
-#'        response group). 
-#' @examples
-#' titanic <- freq2raw(as.data.frame(Titanic), Freq='Freq')
-#' nsample <- NROW(titanic)
-#' mod <- bbl(data=titanic, y='Survived')
-#' mod <- mod[sample(nsample),]
-#' mtrain <- mod[seq(nsample/2),]
-#' mtest <- mod[seq(nsample/2,nsample),]
-#' mtrain <- train(mtrain, method='mf')
-#' pred <- predict(mtrain, newdata=mtest@data)
-#' score <- accuracy(mtest, prediction=pred, balanced=TRUE) 
-#' @export
-accuracy <- function(object, prediction, balanced=FALSE){
-  
-  groups <- object@groups
-  
-  y <- object@data[,colnames(object@data)==object@y]
-  yhat <- colnames(prediction)[apply(prediction, 1, which.max)]
-  
-  if(balanced){
-    acav <- NULL
-    for(k in seq_along(groups)){
-      gr <- groups[k]
-      sub <- y==gr
-      acc <- mean(yhat[sub]==gr)
-      acav <- c(acav,acc)
-    }
-    acav <- mean(acav)
-  }
-  else
-    acav <- mean(y==yhat)
-  
-  return(list(acc=acav, yhat=yhat))
-}
 
-#' Read FASTA file
+#' Read FASTA File
 #' 
 #' Read nucleotide sequence files in FASTA format
 #' 
@@ -101,10 +50,10 @@ accuracy <- function(object, prediction, balanced=FALSE){
 #' write('>seq2', file, append=TRUE)
 #' write('gccaa', file, append=TRUE)
 #' system(paste0('cat ',file))
-#' x <- read.fasta(file)
+#' x <- readFasta(file)
 #' x
 #' @export
-read.fasta <- function(file, rownames=FALSE){
+readFasta <- function(file, rownames=FALSE){
   
   if(!file.exists(file)) stop(paste0(file,' does not exist'))
   fl <- readLines(file)
@@ -134,4 +83,30 @@ read.fasta <- function(file, rownames=FALSE){
   colnames(dat) <- seq_len(NCOL(dat))
   
   return(dat)
+}
+
+#' Remove Non-varying Predictors
+#' 
+#' Constant predictor is identified and removed
+#' 
+#' Variables with only one factor level is removed from data. Intended
+#' for use before calling \code{\link{bbl}}.
+#' @param x Data frame containing discrete factor variables in each column
+#' @return Data frame omitting non-varying variables from \code{x}.
+#' @examples
+#' set.seed(351)
+#' nt <- c('a','c','g','t')
+#' x <- data.frame(v1=sample(nt,size=50,replace=TRUE),
+#'                 v2=rep('a',50),v3=sample(nt,size=50,replace=TRUE))
+#' y <- sample(c('case','ctrl'),size=50,replace=TRUE)
+#' dat <- cbind(data.frame(y=y), x)
+#' summary(dat)
+#' dat <- removeConst(dat)
+#' summary(dat)
+#' @export
+removeConst <- function(x){
+  
+  bad <- lapply(x, function(x){length(levels(factor(x)))==1})
+  bad <- unlist(bad)
+  return(x[,!bad])
 }

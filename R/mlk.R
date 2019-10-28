@@ -5,14 +5,15 @@
 #' Given numeric data matrix, either pseudo-likelihood
 #' of mean-field theory is used to find the maximum likelihood estimate
 #' of bias \code{h} and interaction \code{J} parameters. Normally
-#' called by \code{\link{train}} rather than directly.
+#' called by \code{\link{bbl}} rather than directly.
 #' 
-#' @param xi Data matrix. In contrast to \code{data} slot in \code{\link{bbl}}
-#'        object, this matrix is always numeric with elements ranging from 
-#'        zero to positive integral upper bound \code{L-1}. 
-#'        \code{\link{train}} does
-#'        the transformation from factors to this numeric matrix for
-#'        \code{bbl} objects. 
+#' @param xi Data matrix; expected to be numeric with elements ranging from 
+#'        zero to positive integral upper bound \code{L-1}.
+#' @param freq Frequency vector of number of times each row of \code{xi} 
+#'        is to be repeated. If \code{NULL}, defaults to 1. Expected
+#'        to be non-negative integers.
+#' @param qJ Matrix of logicals indicating which predictor pairs are
+#'        interacting. If \code{NULL}, all are allowed.
 #' @param method \code{c('pseudo','mf')} for pseudo-likelihood maximization or
 #'        mean field inference.
 #' @param L Vector of number of factor levels in each predictor. If
@@ -32,7 +33,7 @@
 #' @param tolerance Upper bound for fractional changes in pseduo-likelihood
 #'        values before termiating iteration in \code{'pseudo'}.
 #' @param verbose Verbosity level.
-#' @param prior.count Use prior count for \code{method = 'mf'} to reduce
+#' @param prior.count Use prior count of 1 for \code{method = 'mf'} to reduce
 #'        numerical instability.
 #' @param naive Naive Bayes inference. Equivalent to \code{method = 'mf'} together
 #'        with \code{eps = 0}.
@@ -60,16 +61,23 @@
 #' points(x=unlist(par$J), y=unlist(mf$J), col='green')
 #' @export
 
-mlestimate <- function(xi, method='pseudo', L=NULL, lambda=1e-5,
-                       lambdah=0, symmetrize=TRUE, eps=0.9, 
-                       nprint=100, itmax=10000,
-                       tolerance=1e-5, verbose=1, prior.count=TRUE,
-                       naive=FALSE, lz.half=FALSE){
+mlestimate <- function(xi, freq=NULL, qJ=NULL, method='pseudo', 
+                       L=NULL, lambda=1e-5, lambdah=0, symmetrize=TRUE, eps=0.9,
+                       nprint=100, itmax=10000, tolerance=1e-5, verbose=1,
+                       prior.count=TRUE, naive=FALSE, lz.half=FALSE){
   
   if(is.null(lambdah))
     lambdah <- lambda
   
   m <- NCOL(xi)
+  if(is.null(qJ)){
+    qJ <- matrix(TRUE, nrow=m, ncol=m)
+    rownames(qJ) <- colnames(qJ) <- colnames(xi)
+    diag(qJ) <- FALSE
+  }
+  if(naive) qJ[which(qJ,arr.ind=TRUE)] <- FALSE
+  else naive <- sum(qJ)==0  # no interaction
+  
   La <- apply(xi, 2, max)
   if(is.null(L))
     L <- La
@@ -88,6 +96,11 @@ mlestimate <- function(xi, method='pseudo', L=NULL, lambda=1e-5,
   if(!is.numeric(xi[1,1]) | min(xi)<0) 
     stop('Input data to mlestimate must be numeric and non-negative')
   
+  nsample <- NROW(xi)
+  if(is.null(freq)) freq <- rep(1L, nsample)
+  else if(length(freq)!=nsample) 
+    stop('Length of freq does not match data')
+  
   if(method=='pseudo'){
     Lambda <- c(lambda, lambdah)
     Nprint <- c(nprint)
@@ -96,23 +109,25 @@ mlestimate <- function(xi, method='pseudo', L=NULL, lambda=1e-5,
     Verbose <- c(verbose)
     Lzhalf <- c(lz.half)
     Naive <- c(naive)
-    theta <- pseudo_mle(xi, L, Lambda, Nprint, Itmax, Tol, Naive, 
-                        Verbose, Lzhalf)
+    theta <- pseudo_mle(xi, freq, qJ, L, Lambda, Nprint, Itmax, Tol, 
+                        Naive, Verbose, Lzhalf)
     L <- theta$L
   }
   else if(method=='mf'){
     Eps <- c(eps)
-    theta <- mfwrapper(xi, L, Eps)
+    theta <- mfwrapper(xi, freq, qJ, L, Eps)
   }
   else stop('unknown method in mlestimate')
 
   h <- theta$h
   J <- vector('list',m)
   for(i in seq_len(m)) J[[i]] <- vector('list',m)
-  for(i in seq(1,m)){ 
+  for(i in seq(1,m)){
+    Li <- L[i]
     for(j in seq(i,m)){
-      x <- matrix(theta$J[[i]][[j]], nrow=L[i], ncol=L[j], byrow=TRUE)
-      xt <- matrix(theta$J[[j]][[i]], nrow=L[j], ncol=L[i], byrow=TRUE)
+      Lj <- L[j]
+      x <- matrix(theta$J[[i]][[j]], nrow=Li, ncol=Lj, byrow=TRUE)
+      xt <- matrix(theta$J[[j]][[i]], nrow=Lj, ncol=Li, byrow=TRUE)
       if(i<j & symmetrize){ 
         x <- (x + t(xt))/2
         xt <- t(x)
@@ -122,6 +137,6 @@ mlestimate <- function(xi, method='pseudo', L=NULL, lambda=1e-5,
     }
   }
 
-  return(list(h=h, J=J, mle=theta$lkl, lz=theta$lz))
+  return(list(h=h, J=J, lkh=theta$lkh, lz=theta$lz))
 
 }

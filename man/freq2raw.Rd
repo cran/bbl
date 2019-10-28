@@ -4,15 +4,15 @@
 \alias{freq2raw}
 \title{Convert Frequency Table into Raw Data}
 \usage{
-freq2raw(fdata, Freq)
+freq2raw(data, freq)
 }
 \arguments{
-\item{fdata}{Data frame with factors in columns and a frequency column}
+\item{data}{Data frame with factors in columns}
 
-\item{Freq}{Integer column index or column name of frequency}
+\item{freq}{Vector of frequency of each row in \code{data}}
 }
 \value{
-Raw data frame with one row per instances
+Data frame with one row per instances
 }
 \description{
 Data with unique rows and a frequency column is converted into
@@ -25,6 +25,6 @@ The ouput data frame can be used as input to \code{\link{bbl}}.
 Titanic
 x <- as.data.frame(Titanic)
 head(x)
-titanic <- freq2raw(x, Freq='Freq')
+titanic <- freq2raw(data=x[,1:3], freq=x$Freq)
 head(titanic)
 }

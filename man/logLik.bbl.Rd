@@ -12,12 +12,14 @@
 \item{...}{Other arguments to methods}
 }
 \value{
-Log likelihood value
+An object of class \code{logLik}, the Log likelihood value
+and the attribute "df" (degrees of freedom), the number of
+parameters.
 }
 \description{
 Compute log likelihood from a fitted \code{bbl} object
 }
 \details{
-This method will use inferred parameters from calls to \code{bbl} and data
-compute the log likelihood.
+This method uses inferred parameters from calls to \code{bbl}
+and data to compute the log likelihood.
 }

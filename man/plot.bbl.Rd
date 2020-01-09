@@ -4,8 +4,7 @@
 \alias{plot.bbl}
 \title{Plot bbl object}
 \usage{
-\method{plot}{bbl}(x, layout = NULL, hcol = NULL, Jcol = NULL,
-  npal = 100, ...)
+\method{plot}{bbl}(x, layout = NULL, hcol = NULL, Jcol = NULL, npal = 100, ...)
 }
 \arguments{
 \item{x}{Object of class \code{bbl}}

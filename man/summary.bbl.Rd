@@ -4,14 +4,14 @@
 \alias{summary.bbl}
 \title{Naive Bayes Summary}
 \usage{
-\method{summary}{bbl}(object, prior.count = 1, ...)
+\method{summary}{bbl}(object, prior.count = 0, ...)
 }
 \arguments{
 \item{object}{Object of class \code{bbl}}
 
-\item{prior.count}{Prior count to be used for computing coefficients
-and test results. If \code{0}, will produce \code{NA}s for
-factor levels without data points.}
+\item{prior.count}{Prior count to be used for computing naive Bayes
+coefficients and test results. If \code{0}, will produce \code{NA}s
+for factor levels without data points.}
 
 \item{...}{Other arguments to methods.}
 }

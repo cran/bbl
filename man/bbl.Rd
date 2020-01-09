@@ -4,17 +4,27 @@
 \alias{bbl}
 \title{Boltzmann Bayes Learning Inference}
 \usage{
-bbl(formula, data, freq = NULL, xlevels = NULL, verbose = 1,
-  method = "pseudo", novarOk = FALSE, testNull = TRUE, ...)
+bbl(
+  formula,
+  data,
+  weights = NULL,
+  xlevels = NULL,
+  verbose = 1,
+  method = "pseudo",
+  novarOk = FALSE,
+  testNull = TRUE,
+  prior.count = 1,
+  ...
+)
 }
 \arguments{
 \item{formula}{Formula for modeling}
 
-\item{data}{Data for fitting. If missing, must be explicitly included in
-\code{formula}.}
+\item{data}{Data for fitting}
 
-\item{freq}{Vector of non-negative integer frequencies, recoding
-the number of times each row of data must be repeated. If \code{NULL},
+\item{weights}{Vector of weights for each instance in data. Restricted to
+non-negative integer frequencies, recoding the number of times
+each row of data must be repeated. If \code{NULL},
 assumed to be all 1. Fractional weights are not supported.}
 
 \item{xlevels}{List of factor levels for predictors. If \code{NULL},
@@ -31,6 +41,9 @@ level.}
 
 \item{testNull}{Repeat the inference for the `pooled' sample; i.e., under the
 null hypothesis of all rows in data belonging to a single group.}
+
+\item{prior.count}{Prior count for computing single predictor and pairwise
+frequencies}
 
 \item{...}{Other parameters to \code{\link{mlestimate}}.}
 }
@@ -60,7 +73,7 @@ are of one less dimension, omitting response group argument.}
 \item{model}{Model data frame derived from \code{formula} and \code{data}.}
 \item{lkh}{Log likelihood.}
 \item{lz}{Vector log partition function. Used in \code{\link{predict}}.}
-\item{freq}{Frequency vector input.}
+\item{weights}{Vector of integral weights (frequencies).}
 \item{call}{Function call.}
 \item{df}{Degrees of freedom.}
 }
@@ -77,8 +90,6 @@ calling if this happens.
 }
 \examples{
 titanic <- as.data.frame(Titanic)
-freq <- titanic$Freq
-titanic <- titanic[,1:4]
-b <- bbl(Survived ~ .^2, data=titanic, freq=freq)
+b <- bbl(Survived ~ .^2, data=titanic[,1:4], weights=titanic$Freq)
 b
 }

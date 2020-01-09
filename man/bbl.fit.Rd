@@ -4,8 +4,17 @@
 \alias{bbl.fit}
 \title{bbl Inference with model matrix}
 \usage{
-bbl.fit(x, y, qJ = NULL, freq = NULL, xlevels = NULL, verbose = 1,
-  method = "pseudo", ...)
+bbl.fit(
+  x,
+  y,
+  qJ = NULL,
+  weights = NULL,
+  xlevels = NULL,
+  verbose = 1,
+  method = "pseudo",
+  prior.count = 1,
+  ...
+)
 }
 \arguments{
 \item{x}{Data frame of factors with each predictor in columns.}
@@ -15,7 +24,7 @@ bbl.fit(x, y, qJ = NULL, freq = NULL, xlevels = NULL, verbose = 1,
 \item{qJ}{Matrix of logicals indicating which predictor combinations
 are interacting.}
 
-\item{freq}{Vector of non-negative integer frequencies, recoding
+\item{weights}{Vector of non-negative integer frequencies, recoding
 the number of times each row of data must be repeated.
 If \code{NULL}, assumed to be all 1. Fractional weights are not
 supported.}
@@ -27,6 +36,9 @@ will be inferred from data with factor levels ordered alphanumerically.}
 \code{\link{mlestimate}} with one level down.}
 
 \item{method}{\code{c('pseudo','mf')}; inference method.}
+
+\item{prior.count}{Prior count for computing single predictor and pairwise
+frequencies}
 
 \item{...}{Other arguments to \code{\link{mlestimate}}.}
 }
@@ -48,6 +60,6 @@ titanic <- as.data.frame(Titanic)
 freq <- titanic$Freq
 x <- titanic[,1:3]
 y <- titanic$Survived
-b <- bbl.fit(x=x,y=y, freq=freq)
+b <- bbl.fit(x=x,y=y, weights=freq)
 b
 }

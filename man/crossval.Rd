@@ -4,17 +4,29 @@
 \alias{crossVal}
 \title{Cross-Validation of BB Learning}
 \usage{
-crossVal(formula, data, freq = NULL, novarOk = FALSE, lambda = 1e-05,
-  lambdah = 0, eps = 0.9, nfold = 5, method = "pseudo",
-  naive = FALSE, use.auc = TRUE, verbose = 1, progress.bar = FALSE,
-  storeOpt = TRUE, ...)
+crossVal(
+  formula,
+  data,
+  weights = NULL,
+  novarOk = FALSE,
+  lambda = 1e-05,
+  lambdah = 0,
+  eps = 0.9,
+  nfold = 5,
+  method = "pseudo",
+  use.auc = TRUE,
+  verbose = 1,
+  progress.bar = FALSE,
+  storeOpt = TRUE,
+  ...
+)
 }
 \arguments{
 \item{formula}{Formula for model. Note that intercept has no effect.}
 
 \item{data}{Data frame of data. Column names must match \code{formula}.}
 
-\item{freq}{Frequency vector of how many times each row of \code{data} must
+\item{weights}{Frequency vector of how many times each row of \code{data} must
 be repeated. If \code{NULL}, defaults to vector of 1s.
 Fractional values are not supported.}
 
@@ -36,9 +48,6 @@ for each value.}
 \item{method}{\code{c('pseudo','mf')} for pseudo-likelihood maximization or
 mean field.}
 
-\item{naive}{Naive Bayes (no interactions). Equivalent to \code{method = 'mf'}
-together with \code{eps = 0}.}
-
 \item{use.auc}{Use AUC as the measure of prediction accuracy. Only works
 if response groups are binary. If \code{FALSE}, mean prediction group
 accuracy will be used as score.}
@@ -58,7 +67,8 @@ with extra components
 and \code{eps} for \code{method='pseudo'} and \code{method='mf'},
 respectively, at which the accuracy score is maximized}
 \item{maxscore}{Value of maximum accuracy score}
-\item{cvframe}{Data frame of regularization parameters and scores scanned}
+\item{cvframe}{Data frame of regularization parameters and scores scanned.
+If \code{use.auc=TRUE}, also contains 95\% c.i.}
 The components of \code{\link{bbl}} store the optimal model trained
 if \code{storeOpt=TRUE}.
 }

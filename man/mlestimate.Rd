@@ -4,16 +4,30 @@
 \alias{mlestimate}
 \title{Maximum likelihood estimate}
 \usage{
-mlestimate(xi, freq = NULL, qJ = NULL, method = "pseudo", L = NULL,
-  lambda = 1e-05, lambdah = 0, symmetrize = TRUE, eps = 0.9,
-  nprint = 100, itmax = 10000, tolerance = 1e-05, verbose = 1,
-  prior.count = TRUE, naive = FALSE, lz.half = FALSE)
+mlestimate(
+  xi,
+  weights = NULL,
+  qJ = NULL,
+  method = "pseudo",
+  L = NULL,
+  lambda = 1e-05,
+  lambdah = 0,
+  symmetrize = TRUE,
+  eps = 0.9,
+  nprint = 100,
+  itmax = 10000,
+  tolerance = 1e-05,
+  verbose = 1,
+  prior.count = 1,
+  naive = FALSE,
+  lz.half = FALSE
+)
 }
 \arguments{
 \item{xi}{Data matrix; expected to be numeric with elements ranging from
 zero to positive integral upper bound \code{L-1}.}
 
-\item{freq}{Frequency vector of number of times each row of \code{xi}
+\item{weights}{Frequency vector of number of times each row of \code{xi}
 is to be repeated. If \code{NULL}, defaults to 1. Expected
 to be non-negative integers.}
 
@@ -49,7 +63,7 @@ values before termiating iteration in \code{'pseudo'}.}
 
 \item{verbose}{Verbosity level.}
 
-\item{prior.count}{Use prior count of 1 for \code{method = 'mf'} to reduce
+\item{prior.count}{Prior count for \code{method = 'mf'} to reduce
 numerical instability.}
 
 \item{naive}{Naive Bayes inference. Equivalent to \code{method = 'mf'} together

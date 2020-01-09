@@ -4,8 +4,7 @@
 \alias{randompar}
 \title{Generate Random Parameters}
 \usage{
-randompar(predictors, distr = "unif", h0 = 0, dh = 1, J0 = 0,
-  dJ = 1)
+randompar(predictors, distr = "unif", h0 = 0, dh = 1, J0 = 0, dJ = 1)
 }
 \arguments{
 \item{predictors}{List of predictor factor levels. See \code{\link{bbl}}.}

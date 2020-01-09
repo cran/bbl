@@ -4,8 +4,7 @@
 \alias{predict.bbl}
 \title{Predict Response Group Using \code{bbl} Model}
 \usage{
-\method{predict}{bbl}(object, newdata, logit = TRUE, verbose = 1,
-  naive = FALSE, progress.bar = FALSE, ...)
+\method{predict}{bbl}(object, newdata, type = "link", verbose = 1, progress.bar = FALSE, ...)
 }
 \arguments{
 \item{object}{Object of class \code{bbl} containing trained model}
@@ -18,12 +17,10 @@ are not provided, the columns should exactly match
 \code{model@data} predictor parts. If \code{NULL}, replaced
 by \code{model@data} (self-prediction).}
 
-\item{logit}{Return predictors whose logistic function gives probability;
-otherwise return probability itself.}
+\item{type}{Return value type. If \code{'link'},
+the logit scale probabilities. If \code{'prob'} the probability itself.}
 
 \item{verbose}{Verbosity level}
-
-\item{naive}{Nnaive Bayes. Skip all interaction terms.}
 
 \item{progress.bar}{Display progress of response group probability. Useful
 for large samples.}

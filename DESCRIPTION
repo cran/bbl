@@ -1,11 +1,11 @@
 Package: bbl
 Title: Boltzmann Bayes Learner
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: c(person("Jun","Woo",role=c("aut","cre"),
-                     email="jwoo@umn.edu",
+                     email="junwoo035@gmail.com",
                      comment=c(ORCID="0000-0003-3220-2064")), 
              person("Jinhua","Wang", role=c("ctb")))
-Maintainer: Jun Woo <jwoo@umn.edu>
+Maintainer: Jun Woo <junwoo035@gmail.com>
 Depends: R (>= 3.6.0)
 Imports: methods, stats, utils, Rcpp (>= 0.12.16), pROC, RColorBrewer
 Description: Supervised learning using Boltzmann Bayes model inference, 
@@ -22,8 +22,8 @@ Encoding: UTF-8
 RoxygenNote: 7.0.0
 NeedsCompilation: yes
 Suggests: glmnet, BiocManager, Biostrings
-Packaged: 2019-12-26 20:32:25 UTC; jwoo
 Author: Jun Woo [aut, cre] (<https://orcid.org/0000-0003-3220-2064>),
   Jinhua Wang [ctb]
 Repository: CRAN
-Date/Publication: 2020-01-09 21:00:02 UTC
+Packaged: 2020-03-11 02:50:12 UTC; junwoo
+Date/Publication: 2020-03-11 11:30:03 UTC

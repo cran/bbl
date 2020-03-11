@@ -81,7 +81,8 @@ Discrete Predictors in R}
   Masonic Cancer Center\\
   University of Minnesota\\
   Minneapolis, Minnesota, USA\\
-  E-mail: \email{jwoo@umn.edu}
+% E-mail: \email{jwoo@umn.edu}
+  E-mail: \email{junwoo035@gmail.com}
 }
 
 \begin{document}

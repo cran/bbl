@@ -1,5 +1,4 @@
 ### R code from vignette source 'article.Rnw'
-### Encoding: NA
 
 ###################################################
 ### code chunk number 1: preliminaries

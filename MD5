@@ -1,4 +1,4 @@
-777c66413dcf71beae77dc0e93821eb4 *DESCRIPTION
+ce9f6c80547867223ad657560442942e *DESCRIPTION
 035aef5580a8b0ebb686791d9e60ac17 *NAMESPACE
 42acf55d9ff790aecc96f194e470c734 *NEWS
 a4f9d8129887277ad15c308d2b370da0 *R/RcppExports.R
@@ -11,10 +11,10 @@ fe135eb2975b068b3d6c24f21559ef34 *R/bbl_s3.R
 c621461bb40efaa554b28c3fe56c0133 *R/sample.R
 71c770ef0a38192b862148a0468ebd9e *R/utils.R
 46e6359e02bcc7a048c5109bf74b2cde *README.md
-647d578ecf9464a6c00bc0b100c7bfbb *build/vignette.rds
-3a6c7d53094d129cd384365a1d207e7c *inst/doc/article.R
-fb4b732fe812394ea0b5d893a4277b91 *inst/doc/article.Rnw
-6d16ef274aa2c0017d62c62830150e57 *inst/doc/article.pdf
+062dbcf7a1b27b739564cc259072ac75 *build/vignette.rds
+3a2fbbe43bc8086c915b9dacbd292a16 *inst/doc/article.R
+f895beb2a462e07f4e5294e36ae02f36 *inst/doc/article.Rnw
+85863b882886e7cb1ee47cf336c59a0a *inst/doc/article.pdf
 0bcc5a18df5b077a486a8646ee522cab *inst/extdata/MA0014.3.fasta
 80ac993c7068d76f96884195dc067bb3 *inst/extdata/mnist_test.csv
 f9d2bd361e7cfe08e0a2b56f082a88e9 *inst/extdata/mnist_train.csv
@@ -51,7 +51,7 @@ a37379e2c74c0d87101d1deb07d70616 *src/bfgs.h
 9a677605d726b497b222555c77ed470d *src/invc.cpp
 22852dd79a3225132edeb858e700d4bb *src/mfwrapper.cpp
 6a592a2aff098edae9970f3ed3d95b6b *src/pseudo_mle.cpp
-fb4b732fe812394ea0b5d893a4277b91 *vignettes/article.Rnw
+f895beb2a462e07f4e5294e36ae02f36 *vignettes/article.Rnw
 3eb895864dae3e32e9466935c1e3c8ed *vignettes/mnist_map.pdf
 4efba27193ce5ba197f3577fab141d35 *vignettes/mnist_mf.pdf
 c1e1126f4ca59048ff6a91a07a710b90 *vignettes/refs.bib

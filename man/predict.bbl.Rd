@@ -11,13 +11,13 @@
 
 \item{newdata}{Data frame of new data for which prediction is to
 be made. Columns must contain all of those in \code{model@data}.
-If column names are present, the columns will be matched
+If column names are present, the columns will be matched 
 based on them. Extra columns will be ignored. If column names
-are not provided, the columns should exactly match
+are not provided, the columns should exactly match 
 \code{model@data} predictor parts. If \code{NULL}, replaced
 by \code{model@data} (self-prediction).}
 
-\item{type}{Return value type. If \code{'link'},
+\item{type}{Return value type. If \code{'link'}, 
 the logit scale probabilities. If \code{'prob'} the probability itself.}
 
 \item{verbose}{Verbosity level}
@@ -29,15 +29,15 @@ for large samples.}
 }
 \value{
 Data frame of predicted posterior probabilities with samples in rows
-and response groups in columns. The last column is the predicted
-response group with maximum probability.
+        and response groups in columns. The last column is the predicted
+        response group with maximum probability.
 }
 \description{
 Make prediction of response group identity based on trained model
 }
 \details{
 This method uses a new data set for predictors and trained \code{bbl} model
-parameters to compute posterior probabilities of response group
+parameters to compute posterior probabilities of response group 
 identity.
 }
 \examples{

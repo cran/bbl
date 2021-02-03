@@ -18,7 +18,7 @@ Vector binary values for each data point
 Binary-valued vector of fitted vs. true response group
 }
 \details{
-Discrete response group identity for each data point is compared with
+Discrete response group identity for each data point is compared with 
 the fitted group and 0 (discordant) or 1 (concordant) is returned
 }
 \examples{

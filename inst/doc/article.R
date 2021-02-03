@@ -11,15 +11,13 @@ options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
 ###################################################
 titanic <- as.data.frame(Titanic)
 titanic
-freq <- titanic$Freq
-titanic <- titanic[, 1:4]
 
 
 ###################################################
 ### code chunk number 3: raw
 ###################################################
 library('bbl')
-titanic_raw <- freq2raw(data = titanic, freq = freq)
+titanic_raw <- freq2raw(data = titanic, freq = Freq)
 head(titanic_raw)
 summary(titanic_raw)
 
@@ -28,17 +26,16 @@ summary(titanic_raw)
 ### code chunk number 4: lr
 ###################################################
 gfit0 <- glm(Survived ~ Class + Sex + Age, family = binomial(), 
-  data = titanic, weights=freq)
-gfit0
-summary(gfit0)
+  data = titanic, weights = Freq)
+coef(summary(gfit0))
 
 
 ###################################################
 ### code chunk number 5: glm2
 ###################################################
 gfit1 <- glm(Survived ~ (Class + Sex + Age)^2, family = binomial(), 
-  data = titanic, weights = freq)
-summary(gfit1)
+  data = titanic, weights = Freq)
+coef(summary(gfit1))
 
 
 ###################################################
@@ -93,7 +90,7 @@ head(xdat)
 ###################################################
 ### code chunk number 11: class
 ###################################################
-bfit0 <- bbl(Survived ~ Class + Sex + Age, data = titanic, weights = freq,
+bfit0 <- bbl(Survived ~ Class + Sex + Age, data = titanic, weights = Freq,
   prior.count = 0)
 
 
@@ -110,15 +107,25 @@ summary(bfit0)
 
 
 ###################################################
-### code chunk number 14: survival
+### code chunk number 14: nbvslr
+###################################################
+cb0 <- coef(bfit0)
+beta <- list(Class = cb0$h$Yes$Class - cb0$h$No$Class, 
+  Sex = cb0$h$Yes$Sex - cb0$h$No$Sex, Age = cb0$h$Yes$Age - cb0$h$No$Age)
+unlist(beta)
+coef(summary(gfit0))[,'Estimate']
+
+
+###################################################
+### code chunk number 15: survival
 ###################################################
 bfit <- bbl(Survived ~ Class * Sex + Sex * Age, data = titanic, 
-  weights = freq)
+  weights = Freq)
 bfit
 
 
 ###################################################
-### code chunk number 15: plot
+### code chunk number 16: plot
 ###################################################
 oldpar <- par(mar = c(6, 4.5, 3, 4), tck = -0.05, cex.axis = 0.8)
 plot(bfit)
@@ -126,7 +133,13 @@ par(oldpar)
 
 
 ###################################################
-### code chunk number 16: predict.bbl
+### code chunk number 17: plot2 (eval = FALSE)
+###################################################
+## plot(bfit)
+
+
+###################################################
+### code chunk number 18: predict.bbl
 ###################################################
 bfit2 <- bbl(Survived ~ Class * Sex + Sex * Age, data = dtrain)
 pr <- predict(bfit2, newdata = dtest, type = 'prob')
@@ -137,7 +150,7 @@ auc
 
 
 ###################################################
-### code chunk number 17: cvsim
+### code chunk number 19: cvsim
 ###################################################
 cv <- crossVal(Survived ~ .^2, data = dtrain, method = 'pseudo', 
   lambda = 10^seq(-5, -2, 0.2), verbose = 0)
@@ -146,13 +159,13 @@ plot(cv, mar=c(4, 4, 3, 3), tck = -0.04, bty = 'n')
 
 
 ###################################################
-### code chunk number 18: plotcv
+### code chunk number 20: plotcv
 ###################################################
 plot(cv, mar = c(4, 4, 3, 3), tck = -0.04, bty = 'n')
 
 
 ###################################################
-### code chunk number 19: pr2
+### code chunk number 21: pr2
 ###################################################
 model <- bbl(Survived ~ .^2, data = dtrain, lambda = cv$regstar)
 pr2 <- predict(model, newdata = dtest)
@@ -164,14 +177,14 @@ bauc
 
 
 ###################################################
-### code chunk number 20: mcmc
+### code chunk number 22: mcmc
 ###################################################
 map <- mcSample(bfit, nstep = 1000, progress.bar = FALSE)
 map
 
 
 ###################################################
-### code chunk number 21: sim1
+### code chunk number 23: sim1
 ###################################################
 predictors <- list()
 m <- 5
@@ -182,7 +195,7 @@ names(par)
 
 
 ###################################################
-### code chunk number 22: sample
+### code chunk number 24: sample
 ###################################################
 xi <- sample_xi(nsample = 10000, predictors = predictors, h = par$h, 
   J = par$J, code_out = TRUE)
@@ -190,13 +203,13 @@ head(xi)
 
 
 ###################################################
-### code chunk number 23: mle
+### code chunk number 25: mle
 ###################################################
 fit <- mlestimate(xi = xi, method = 'pseudo', lambda = 0)
 
 
 ###################################################
-### code chunk number 24: par
+### code chunk number 26: par
 ###################################################
 oldpar <- par(mar = c(4, 4, 1, 2), lwd = 0.5, cex.axis = 0.8, 
   cex.lab = 1.0, mgp = c(2.2 ,0.9, 0), tck = -0.03)
@@ -215,7 +228,7 @@ par(oldpar)
 
 
 ###################################################
-### code chunk number 25: atgc
+### code chunk number 27: atgc
 ###################################################
 nt <- c('a', 'c', 'g', 't')
 set.seed(135)
@@ -229,7 +242,7 @@ dat <- randomsamp(predictors, response = c('ctrl', 'case'), par = par,
 
 
 ###################################################
-### code chunk number 26: cr-mf
+### code chunk number 28: cr-mf
 ###################################################
 cv <- crossVal(y ~ .^2, data = dat, method = 'mf', eps = seq(0, 1, 0.1),
   verbose=0)
@@ -237,7 +250,7 @@ cv
 
 
 ###################################################
-### code chunk number 27: mf-par
+### code chunk number 29: mf-par
 ###################################################
 fit <- list()
 eps <- c(0.2, 0.7, 1.0)
@@ -247,7 +260,7 @@ for(i in seq_along(eps))
 
 
 ###################################################
-### code chunk number 28: cv
+### code chunk number 30: cv
 ###################################################
 oldpar <- par(mfrow = c(2, 2), mar = c(4, 4, 2, 2), lwd = 0.5, 
   cex.axis = 0.8, cex.lab = 0.9, mgp = c(2.2, 0.8, 0), tck = -0.03, 
@@ -260,7 +273,7 @@ segments(x0 = estar, x1 = estar, y0 = 0, y1 = cv$maxscore, lty = 2,
 title(adj = 0, cex.main = 1.2, font = 2, main = 'a')
 
 for(i in 1:3){
-  plot(x = c(unlist(par[[1]]$h), unlist(par[[2]]$h)), 
+  plot(x = c(unlist(par[[2]]$h), unlist(par[[1]]$h)), 
     y = unlist(coef(fit[[i]])$h), bg = 'cornflowerblue', 
     xlim = c(-1.5, 1.5), ylim = c(-1.5, 1.5), pch = 21, cex = 0.7, 
     xlab = 'True', ylab = 'Inferred', lwd = 0.7, xaxt = 'n', yaxt = 'n',
@@ -268,7 +281,7 @@ for(i in 1:3){
   axis(side = 1, at = seq(-1.5, 1.5, 0.5), lwd = 0.5, las = 1)
   axis(side = 2, at = seq(-1.5, 1.5, 0.5), lwd = 0.5, las = 1)
   segments(x0 = -2, x1 =2 , y0 = -2, y1 = 2, lty = 2, lwd = 0.7)
-  points(x = c(unlist(par[[1]]$J), unlist(par[[2]]$J)), 
+  points(x = c(unlist(par[[2]]$J), unlist(par[[1]]$J)), 
     y = unlist(coef(fit[[i]])$J), pch = 24, bg = 'orange', cex = 0.7, 
     lwd = 0.7)
   if(i==1) legend(x = 0.5, y = -0.5, legend = expression(italic(h), 
@@ -282,7 +295,7 @@ par(oldpar)
 
 
 ###################################################
-### code chunk number 29: ntaa
+### code chunk number 31: ntaa
 ###################################################
 set.seed(351)
 n <- 2000
@@ -293,7 +306,7 @@ head(dat)
 
 
 ###################################################
-### code chunk number 30: biostrings
+### code chunk number 32: biostrings
 ###################################################
 if(!require('Biostrings')){
   if(!require('BiocManager'))
@@ -308,7 +321,7 @@ head(xdat)
 
 
 ###################################################
-### code chunk number 31: aacv
+### code chunk number 33: aacv
 ###################################################
 cv <- crossVal(aa ~ .^2, data = xdat, lambda = 10^seq(-3, 1, 0.5), 
   verbose = 0)
@@ -316,7 +329,7 @@ cv
 
 
 ###################################################
-### code chunk number 32: codon
+### code chunk number 34: codon
 ###################################################
 panel <- expand.grid(b1 = nt, b2 = nt, b3 = nt)
 head(panel)
@@ -324,12 +337,12 @@ dim(panel)
 p <- predict(cv, panel)
 ap <- Biostrings::DNAString(paste(t(panel), collapse = ''))
 ap <- strsplit(as.character(Biostrings::translate(ap)), split = '')[[1]]
-score <- mean(ap == p$yhat)
-score
+accuracy <- mean(ap == p$yhat)
+accuracy
 
 
 ###################################################
-### code chunk number 33: mnist
+### code chunk number 35: mnist
 ###################################################
 dat0 <- read.csv(system.file('extdata/mnist_train.csv', package = 'bbl'))
 dat <- removeConst(dat0)
@@ -337,24 +350,35 @@ dat[1:5, 1:10]
 
 
 ###################################################
-### code chunk number 34: mnist_cval (eval = FALSE)
+### code chunk number 36: mnist_cval (eval = FALSE)
 ###################################################
 ## cv <- crossVal(y ~ .^2, data = dat, method = 'mf', eps = 0.05)
 
 
 ###################################################
-### code chunk number 35: mnist3 (eval = FALSE)
+### code chunk number 37: mnist3 (eval = FALSE)
 ###################################################
 ## mnist <- bbl(y ~ .^2, data = dat, method = 'mf', eps = 0.05)
 ## dtest <- read.csv(system.file('extdata/mnist_test.csv', package = 'bbl'))
 ## dtest <- dtest[, colnames(dtest) %in% colnames(dat)]
 ## pr <- predict(mnist, newdata = dtest[, -1], progress.bar = TRUE)
-## score <- mean(pr$yhat == dtest$y)
-## score
+## accuracy <- mean(pr$yhat == dtest$y)
 
 
 ###################################################
-### code chunk number 36: mnist_map1 (eval = FALSE)
+### code chunk number 38: mnist3_2
+###################################################
+accuracy <- 0.916
+
+
+###################################################
+### code chunk number 39: mnist3_3
+###################################################
+accuracy
+
+
+###################################################
+### code chunk number 40: mnist_map1 (eval = FALSE)
 ###################################################
 ## mnist_map <- mcSample(mnist, nstep = 20, progress.bar = TRUE)
 ## oldpar <- par(mfrow = c(2, 5), mar = c(1, 1, 1, 1))
@@ -372,7 +396,7 @@ dat[1:5, 1:10]
 
 
 ###################################################
-### code chunk number 37: jaspar
+### code chunk number 41: jaspar
 ###################################################
 seq <- readFasta(system.file('extdata/MA0014.3.fasta', package = 'bbl'))
 head(seq)
@@ -380,7 +404,7 @@ dim(seq)
 
 
 ###################################################
-### code chunk number 38: jaspar2
+### code chunk number 42: jaspar2
 ###################################################
 set.seed(561)
 nsample <- NROW(seq)
@@ -396,7 +420,7 @@ data <- data[sample(NROW(data)), ]
 
 
 ###################################################
-### code chunk number 39: jaspar3
+### code chunk number 43: jaspar3
 ###################################################
 ps <- crossVal(y ~ .^2, data = data, method = 'pseudo', 
   lambda = 10^seq(-2, -1, 0.2), verbose = 0)

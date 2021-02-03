@@ -19,7 +19,7 @@ mcSample(object, nsteps = 1000, verbose = 1, progress.bar = TRUE)
 Uses fitted BBL model to explore predictor distributions
 }
 \details{
-After \code{bbl} fit, the resulting model is used by this function to sample
+After \code{bbl} fit, the resulting model is used by this function to sample 
 predictor distributions in each response group and find the most likely
 preditor set using MCMC.
 }

@@ -14,7 +14,7 @@
 }
 \value{
 Matrix of response group probabities with data points in rows and
-response groups in columns
+        response groups in columns
 }
 \description{
 Response group probabilities from BBL fit

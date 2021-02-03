@@ -75,14 +75,13 @@ Discrete Predictors in R}
 %% - May contain multiple authors for the same affiliation
 %%   (in the same first line, separated by comma).
 \Address{
-  Jun Woo ({\it corresponding author}), Jinhua Wang\\
+  Jun Woo\footnote{Current address: Memorial Sloan Kettering Cancer Center, New York, New York, USA} ({\it corresponding author}), Jinhua Wang\\
   Institute for Health Informatics\\
   \emph{and}\\
   Masonic Cancer Center\\
   University of Minnesota\\
   Minneapolis, Minnesota, USA\\
-% E-mail: \email{jwoo@umn.edu}
-  E-mail: \email{junwoo035@gmail.com}
+  E-mail: \email{wooh@mskcc.org}
 }
 
 \begin{document}
@@ -166,33 +165,41 @@ Section~\ref{sec:usage}, we summarize in this section key relevant formulas \cit
 generalized such that predictors each can have varying number of factor levels. 
 
 \subsection{Model description}
-The discrete response $y_k$ for an instance $k$ takes factor values $y$ among $K\ge 2$ groups; e.g.,
-$y=\text{\code{case},\:\code{control}}$; $k=1,\cdots, n$ denotes sample (or
-configuration) index. We also introduce weights $w_k$, each of which
-is integral number of times each configuration was observed in data, such that
-$\sum_k w_k=n_s$ is the total sample size. If the data take the form of 
-one entry per obserbation, $w_k=1$ and $n=n_s$. The use of
-frequency $w_k$ can lead to more efficient learning when the number of predictors
-is relatively small. We use symbol $y$ for a particular factor value and 
-generic response variables interchangeably. 
+The discrete response $y_k$ for an instance $k$ takes factor values $y$ among $G\ge 2$ groups; e.g.,
+$y=\text{\code{case},\:\code{control}}$ with $G=2$; 
+$k=1,\cdots, n$ denotes sample (or configuration) index. 
+We also introduce weights $w_k$, each of which is integral number of times each
+configuration was observed in data, such that $\sum_k w_k=n_s$ is the total 
+sample size. If the data take the form of one entry per observation, 
+$w_k=1$ and $n=n_s$. The use of frequency $w_k$ can lead to more efficient
+learning when the number of predictors is relatively small. 
+We use symbol $y$ for a particular factor value and generic response variables
+interchangeably. 
 
+The model attempts to connect response $y$ to a set of predictors represented
+by ${\bf x}$ with elements $x_i$ and the observed data for an instance $k$ denoted
+by ${\bf x}^k$. We assume that predictor variables take discrete factor levels,
+each with distinct effect on responses, e.g., 
+$x_i=\text{\code{a},\:\code{t},\:\code{g},\:\code{c}}$ for DNA sequence data.
 The overall likelihood is
 \begin{equation}
-L=\sum_k w_k\ln P({\bf x}^k,y_k)=\sum_y\sum_{k\in y} w_k\ln P({\bf x}^k,y)\equiv \sum_y L_y,
+L=\sum_k w_k\ln P({\bf x}^k,y_k)
+=\sum_y\sum_{k \in \mathbbm{K}_y}w_k\ln P({\bf x}^k,y)\equiv \sum_y L_y,
 \end{equation}
-where the second summation is over all $k$ for which $y_k=y$.
+where the second summation restricts $k$ to the set $\mathbbm{K}_y$ of
+all $k$ values for which $y_k=y$.
 The inference is first performed for each group $y$ separately, maximizing $L_y$ given by
 \begin{equation}
-L_y = \sum_{k \in y} w_k\left[\ln P({\bf x}^k|y)+\ln P(y)\right]
-=\sum_{k \in y}w_k\ln P({\bf x}^k|y)+n_y \ln p_y,
+L_y = \sum_{k \in \mathbbm{K}_y} w_k\left[\ln P({\bf x}^k|y)+\ln P(y)\right]
+=\sum_{k\in \mathbbm{K}_y} w_k\ln P({\bf x}^k|y)+n_y \ln p_y,
 \label{eq:Ly}
 \end{equation}
-where $p_y\equiv P(y)$ is the marginal distribution of $y$ and $n_y=\sum_{k\in y} w_k$ 
+where $p_y\equiv P(y)$ is the marginal distribution of $y$ and 
+$n_y=\sum_{k \in \mathbbm{K}_y} w_k$ 
 is the size of group $y$.
 
-In parametrizing the first term in Eq.~(\ref{eq:Ly}), we assume that predictor variables take discrete factor levels, each with distinct effect on responses,
-e.g., $x_i=\text{\code{a},\:\code{t},\:\code{g},\:\code{c}}$ for DNA sequence data.
-The group-specific predictor distribution can then be written as
+In the parametrization we adopt for the first term in Eq.~(\ref{eq:Ly}),
+the group-specific predictor distribution is written as
 \begin{equation}
 P({\bf x}|y)=\frac{1}{Z_y} \exp\left[ \sum_i h_i^{(y)}(x_i) + \sum_{i<j} J_{ij}^{(y)}(x_i,x_j)\right].
 \label{eq:pxy}
@@ -227,8 +234,9 @@ where parameter superscripts were omitted because response group is not present.
 \subsection{Pseudo-likelihood inference}
 One option for fitting Eq.~(\ref{eq:pxy}) to data is pseudo-likelihood maximization \citep{besag}:
 \begin{equation}
-L_y-n_y\ln p_y=\sum_{k \in y} w_k\ln P({\bf x}^k|y)
-\simeq \sum_{k\in y} w_k\sum_i \ln P_i(x_i^k|y,x_{j\backslash i}^k)
+L_y-n_y\ln p_y=\sum_{k\in\mathbbm{K}_y} w_k\ln P({\bf x}^k|y)
+\simeq \sum_{k\in \mathbbm{K}_y} 
+w_k\sum_i \ln P_i(x_i^k|y,x_{j\backslash i}^k)
 \equiv \sum_i L_{iy},
 \label{eq:Ly2}
 \end{equation}
@@ -250,7 +258,7 @@ and
 Including $L_2$ penalizers $(\lambda_h,\lambda)$, 
 $L_{iy}$ in Eq.~(\ref{eq:Ly2}) becomes
 \begin{equation}
-L_{iy}=\sum_{k\in y} w_k
+L_{iy}=\sum_{k\in \mathbbm{K}_y} w_k
 \left[{\bar h}_i^{(y)}(x_i^k|x_{j\backslash i}^k)-\ln Z_{iy}(x_{j\backslash i}^k)\right]
 -\frac{\lambda_h}{2} \sum_x h_i^{(y)}(x)^2
 -\frac{\lambda}{2}\sum_{j,x,x^\prime} J_{ij}^{(y)}(x,x^\prime)^2
@@ -260,24 +268,24 @@ with first derivatives
 \begin{subequations}
 \begin{eqnarray}
 \frac{\partial L_{iy}/n_y}{\partial h_i^{(y)}(x)} &=& {\hat f}_i^{(y)}(x) 
-- \frac{1}{n_y}\sum_{k\in y} w_k P_i(x|y, x_{l\backslash i}^k)
+- \frac{1}{n_y}\sum_{k\in \mathbbm{K}_y} w_k P_i(x|y, x_{l\backslash i}^k)
 -\lambda_h h_i^{(y)}(x),
 \\
 \frac{\partial L_{iy}/n_y}{\partial J_{ij}^{(y)}(x,x^\prime)} &=& 
 {\hat f}_{ij}^{(y)}(x,x^\prime) 
-- \frac{1}{n_y}\sum_{k\in y} w_k\mathbbm{1}(x_j^k=x^\prime)
+- \frac{1}{n_y}\sum_{k\in\mathbbm{K}_y} w_k\mathbbm{1}(x_j^k=x^\prime)
 P_i(x|y, x_{l\backslash i}^k)
--\lambda J_{ij}^{(y)}(x,x^\prime),
+-\lambda J_{ij}^{(y)}(x,x^\prime)\nonumber\\,
 \end{eqnarray}
 \label{eq:partial}
 \end{subequations}
 \!\!where 
 \begin{subequations}
 \begin{eqnarray}
-{\hat f}_i^{(y)}(x) \!&= &\! \frac{1}{n_y}\sum_{k\in y} w_k 
+{\hat f}_i^{(y)}(x) \!&= &\! \frac{1}{n_y}\sum_{k\in \mathbbm{K}_y} w_k 
 \mathbbm{1}(x_i^k=x),\\
-{\hat f}_{ij}^{(y)}(x,x^\prime) \!&= &\! \frac{1}{n_y}\sum_{k\in y} w_k 
-\mathbbm{1}(x_i^k=x)\mathbbm{1}(x_j^k=x^\prime)
+{\hat f}_{ij}^{(y)}(x,x^\prime) \!&= &\! \frac{1}{n_y}\sum_{k\in
+\mathbbm{K}_y} w_k \mathbbm{1}(x_i^k=x)\mathbbm{1}(x_j^k=x^\prime)
 \end{eqnarray}
 \end{subequations}
 are the first and second moments of predictor values and $\mathbbm{1}(x)$ 
@@ -377,7 +385,7 @@ analytically. From Eqs.~(\ref{eq:mf}) and (\ref{eq:hbari}),
 \end{equation}
 and \citep{woo_etal-2016}
 \begin{equation}
-L_y-n_y\ln p_y=\sum_{k\in y}w_k\ln P({\bf x}^k|y)
+L_y-n_y\ln p_y=\sum_{k\in \mathbbm{K}_y}w_k\ln P({\bf x}^k|y)
 =n_y\sum_{i,x} {\hat f}_i^{(y)}(x) \ln {\hat f}_i^{(y)}(x).
 \end{equation}
 The likelihood ratio statistic for each predictor, where the
@@ -385,10 +393,21 @@ null hypothesis is $h_i^{(y)}(x)=h_i(x)$ with $h_i(x)$ the ``pooled''
 inference parameters (same values for all response groups), is then
 \begin{equation}
 q_i = 2\sum_y n_y\sum_x \left[{\hat f}_i^{(y)}(x)\ln {\hat f}_i^{(y)}(x)
--{\hat f}_i\ln {\hat f}_i(x)\right].
+-{\hat f}_i(x)\ln {\hat f}_i(x)\right].
 \label{eq:qi}
 \end{equation}
-The statistic $q_i\sim \chi^2$ with ${\rm d.f.}=(K-1)(L_i-1)$.
+The statistic $q_i\sim \chi^2$ with ${\rm d.f.}=(G-1)(L_i-1)$.
+Another example of hypotheses that can be tested is
+$h_i^{(y)}(x)=h_i^{(y)}(A)$ for $x \in X_A$, where $X_A$ is a subset $A$ of predictor
+values (e.g., in \code{Titanic} model, the effects of \code{Class} are the same
+for \code{2nd} and \code{3rd Class}; see Sec.~\ref{sec:usage}), for which
+\begin{equation}
+q_i = 2\sum_y n_y\sum_A \sum_{x\in X_A}
+\left[{\hat f}_i^{(y)}(x) \ln{\hat f}_i^{(y)}(x)
+-{\hat f}_i^{(y)}(A)\ln{\hat f}_i^{(y)}(A)\right]
+\end{equation}
+with ${\rm d.f.}=G(L_i-1-N_i)$, where $N_i$ is the number of 
+predictor levels with distinct parameter values.
 
 \subsection{Classification}
 For prediction, we combine predictor distributions for all response groups via Bayes formula:
@@ -408,10 +427,15 @@ F_y({\bf x})=\ln\left[\frac{P({\bf x}|y)p_y}
 For binary response coded as $y=0,1$, Eq.~(\ref{eq:Fy}) reduces to
 \begin{eqnarray}
 F_1({\bf x})&=&\ln P({\bf x}|y=1)-\ln P({\bf x}|y=0) + \ln (p_1/p_0)\nonumber\\
-&=& \sum_i \left[h_i^{(1)}(x_i)-h_i^{(0)}(x_i)\right]
-+\sum_{i<j} \left[ J_{ij}^{(1)}(x_i,x_j) -J_{ij}^{(0)}(x_i,x_j)\right]+
-\ln \frac{Z_0 p_1}{Z_1p_0}.
+&=& \alpha + \sum_i \beta_i(x_i) + \sum_{i<j} \gamma_{ij}(x_i,x_j),
 \label{eq:F}
+\end{eqnarray}
+where 
+\begin{eqnarray}
+\alpha &=&\ln \frac{Z_0 p_1}{Z_1p_0},\nonumber\\
+\beta_i(x) &=& h_i^{(1)}(x)-h_i^{(0)}(x),\nonumber\\
+\gamma_{ij}(x,x^\prime)&=& J_{ij}^{(1)}(x,x^\prime) -J_{ij}^{(0)}(x,x^\prime).
+\label{eq:F2}
 \end{eqnarray}
 Therefore, if $J_{ij}^{(y)}(x,x^\prime)=0$ (naive Bayes), Eq.~(\ref{eq:py}) takes the form of
 the logistic regression formula. However, the actual naive Bayes parameter values differ from logistic 
@@ -420,7 +444,9 @@ than two groups.
 
 In pseudo-likelihood maximization inference, $Z_y$ can be approximated by
 \begin{equation}
-\ln Z_y = \frac{1}{n_y}\sum_{k\in y}\sum_i 
+\ln Z_y = \frac{1}{n_y}
+\sum_{k \in \mathbbm{K}_y}
+\sum_i 
 \ln \left\{\sum_x \left[e^{h_i^{(y)}(x)+\sum_{j\ne i}J_{ij}(x,x_j^k)/2}\right]\right\},
 \label{eq:lnz1}
 \end{equation}
@@ -435,7 +461,7 @@ expression is used:
 \end{equation}
 
 For a test data set for which the actual group identity $y_k$ of data 
-instances are known, the prediction score (accuracy) may be defined as
+instances are known, the accuracy may be defined as
 \begin{equation}
 s=\frac{1}{n}\sum_k \mathbbm{1}\left[{\hat y}({\bf x}^k)=y_k\right],
 \label{eq:s}
@@ -445,10 +471,10 @@ where
 {\hat y}({\bf x}) = \argmax_y P(y|{\bf x}).
 \label{eq:yhat}
 \end{equation}
-If response is binary, the score defined by Eq.~(\ref{eq:s}) is sensitive to marginal distributions of 
+If response is binary, the accuracy defined by Eq.~(\ref{eq:s}) is sensitive to marginal distributions of 
 the two groups via Eq.~(\ref{eq:F}). 
 The area under curve (AUC) of receiver operating characteristic is a more robust performance measure
-independent of probability cutoff. In \pkg{bbl}, the prediction score
+independent of probability cutoff. In \pkg{bbl}, the accuracy
 given by Eqs.~(\ref{eq:s}) and (\ref{eq:yhat}) is used in general with the option 
 to use AUC for binary response using \proglang{R} 
 package \pkg{pROC} \citep{robin_etal,proc}.
@@ -464,8 +490,6 @@ We use the base \proglang{R} data \code{Titanic} as an example:
 <<data>>=
 titanic <- as.data.frame(Titanic)
 titanic
-freq <- titanic$Freq
-titanic <- titanic[, 1:4]
 @
 %
 Although more detailed versions of the same data set are available
@@ -480,7 +504,7 @@ or raw data (one observation per row) we generate using the utility function \co
 %
 <<raw>>=
 library('bbl')
-titanic_raw <- freq2raw(data = titanic, freq = freq)
+titanic_raw <- freq2raw(data = titanic, freq = Freq)
 head(titanic_raw)
 summary(titanic_raw)
 @
@@ -489,9 +513,8 @@ We train a logistic regression model using \code{glm}:
 %
 <<lr>>=
 gfit0 <- glm(Survived ~ Class + Sex + Age, family = binomial(), 
-  data = titanic, weights=freq)
-gfit0
-summary(gfit0)
+  data = titanic, weights = Freq)
+coef(summary(gfit0))
 @
 %
 The fit above included linear terms only. It indicates that survival was strongly
@@ -500,13 +523,13 @@ The model below includes all interactions:
 %
 <<glm2>>=
 gfit1 <- glm(Survived ~ (Class + Sex + Age)^2, family = binomial(), 
-  data = titanic, weights = freq)
-summary(gfit1)
+  data = titanic, weights = Freq)
+coef(summary(gfit1))
 @
 %
-The summary of interacting model suggests that class status 
-association arose from the linear effect of being \code{Crew} and 
-interaction effect of \code{Female} \code{3rd}-class passengers.
+A comparison of the linear coefficients and significance levels in the two models
+suggest that interaction plays important roles; in particular, marginal effects on 
+the linear level remained significant only for the \code{Female} status.
 
 To illustrate training and prediction, we divide the sample into 
 train and test sets:
@@ -521,8 +544,7 @@ dtest <- titanic_raw[!flag,]
 @
 %
 
-We train \code{glm} model with interactions, omitting interaction 
-\code{Class:Age} because it was rank-deficient, and make prediction on test data:
+We train a \code{glm} model with interactions and make prediction on the test data:
 <<lr>>=
 gfit2 <- glm(Survived ~ Class * Sex + Sex * Age, family = binomial(), 
   data = dtrain)
@@ -534,6 +556,8 @@ gauc <- pROC::roc(response = dtest$Survived, predictor = prl,
 gauc
 @
 %
+In the above, the interaction \code{Class:Age} was omitted because it was rank-deficient
+(no \code{Crew} among children) and prediction from a rank-deficient fit is ill-defined.
 
 For comparison with \pkg{bbl}, which by default includes regularization, we
 also consider penalized logistic regression fit using \pkg{glmnet} 
@@ -578,13 +602,12 @@ in association with the response variable.
 However, the regression fit did not provide any further information regarding 
 the source of association: in the examples in Section~\ref{sec:lr},
 the survival of Titanic passengers was seen to be associated with
-being \code{Female} and not being \code{Crew} members or 
-\code{Female} \code{3rd}-class passengers.
-The corresponding linear regression coefficients, which have the same functional form as in Eq.~(\ref{eq:F}), 
-are measures of the {\it difference} in enrichment in the
-two response groups, while the two terms whose difference yielded the 
-coefficient remained unknown. 
-How were the sub-groups distributed among survivor and 
+being \code{Female} and not being \code{Crew} members.
+The corresponding linear regression coefficients, which have the same functional form as 
+in Eq.~(\ref{eq:F}) [$\beta_i(x)$ in Eq.~(\ref{eq:F2}) if interactions are neglected],
+are measures of the {\it difference} in coefficients $h_i^{(y)}$ between the two response groups [Eq.~(\ref{eq:F2})].
+The two terms, $h_i^{(1)}$ and $h_i^{(0)}$, whose difference yielded the coefficient 
+$\beta_i(x)$ remained unknown. How were the sub-groups distributed among survivor and 
 non-survivor groups? Were there very few \code{Female} \code{3rd}-class passengers
 among the survivor group compared to non-survivor, or were they found in both 
 groups but more so among non-survivors? 
@@ -592,8 +615,10 @@ groups but more so among non-survivors?
 The \pkg{bbl} inference estimates the
 individual distributions of predictors in response groups separately 
 and subsequently combines them to make predictions. 
-For binary response, this inference provides estimates of the two coefficients whose 
-difference corresponds to the logistic regression outcome.
+For binary response, this inference provides estimates of the two coefficients 
+[$h_i^{(1)}$, $h_i^{(0)}$ for linear effects and $J_{ij}^{(1)}$, $J_{ij}^{(0)}$ 
+for interactions] in Eq.~(\ref{eq:F}) whose 
+difference corresponds to the logistic regression coefficients.
 More generally, the availability of the direct estimates of predictor distributions
 in each response group given by Eq.~(\ref{eq:pxy}) facilitates model interpretations in a way not possible for regression-based models, 
 as we show below in this section and Section~\ref{sec:image}.
@@ -603,7 +628,7 @@ the Boltzmann Bayes inference. As in \pkg{glm}, \pkg{bbl} uses formula input to
 train an \code{S3} object of class \code{bbl}: 
 %
 <<class>>=
-bfit0 <- bbl(Survived ~ Class + Sex + Age, data = titanic, weights = freq,
+bfit0 <- bbl(Survived ~ Class + Sex + Age, data = titanic, weights = Freq,
   prior.count = 0)
 @
 %
@@ -612,6 +637,14 @@ the maximum pseudo-likelihood equations (\ref{eq:partial}) first
 under the alternative hypothesis (individual groups have 
 distinct distributions) and then the null hypothesis (all samples 
 have the same distribution).
+
+The argument \code{prior.count} can be used to add prior counts to frequencies of 
+occurrence of each predictor level. One may observe that when interaction is neglected,
+the naive Bayes model involves categorical distributions for each predictor.
+In this special case, therefore, the prior count can be regarded as the hyperparameter
+of the conjugate Dirichlet prior, making the overall treatment of the model a fully
+Bayesian extension.
+
 The \code{print} method on \code{bbl} shows the structure of model
 and (subsets) of inferred parameters:
 %
@@ -637,20 +670,34 @@ summary(bfit0)
 The test results are those from likelihood ratio test applied to the
 naive Bayes result, Eq.~(\ref{eq:qi}), with the null hypothesis
 $h_i^{(y)}(a)=h_i(a)$. The tables of bias parameters shown above 
-include those for two survival status groups, which 
-clearly indicate the enrichment of lower \code{Class} status 
-and \code{Male} among non-survivors. \code{Child} are few
-among both survivors and non-survivors; hence highly negative
+include those for two survival status groups. Their signs and magnitudes,
+along with the computed significance levels, clearly indicate the
+associations of lower \code{Class} status and being \code{Male} with non-survivors.
+There are few children among both survivors and non-survivors; hence highly negative
 bias parameters in all groups, although less so in survivor group,
 as expected. We note that the \code{summary} method displays naive Bayes results, 
 for which simple analytic expressions for test results are available, even for models 
 containing interactions.
 
+One may compare the naive Bayes parameter $\beta_i(x)$
+with the logistic regression coefficients:
+%
+<<nbvslr>>=
+cb0 <- coef(bfit0)
+beta <- list(Class = cb0$h$Yes$Class - cb0$h$No$Class, 
+  Sex = cb0$h$Yes$Sex - cb0$h$No$Sex, Age = cb0$h$Yes$Age - cb0$h$No$Age)
+unlist(beta)
+coef(summary(gfit0))[,'Estimate']
+@
+%
+and observe that they are largely consistent (with different signs depending on which
+factor level was used as reference) but not identical.
+
 We now fit an interacting model using \code{bbl}:
 %
 <<survival>>=
 bfit <- bbl(Survived ~ Class * Sex + Sex * Age, data = titanic, 
-  weights = freq)
+  weights = Freq)
 bfit
 @
 %
@@ -667,6 +714,11 @@ par(oldpar)
 Plot of \code{bbl} object displays bias (top) and interaction parameters (bottom).
 All parameters are offset by their pooled (singe-group) values.}
 \end{figure}
+%
+<<plot2, echo=TRUE, eval=FALSE>>=
+plot(bfit)
+@
+%
 The parameters printed include those for interactions.
 The \code{plot} method shows a barplot of bias parameters and a heatmap of
 interaction parameters (Fig.~\ref{fig:plot}).
@@ -758,7 +810,8 @@ and the corresponding ``energy'' values, which are exponents of
 Eq.~(\ref{eq:pxy}). 
 
 \subsection{Simulated data}
-We next demonstrate the reliability of \code{bbl} inference using simulated data.
+We next use simulated data to show the effect of penalizers on \code{bbl} 
+inference as well as its usefulness under varying sample sizes.
 %
 <<sim1>>=
 predictors <- list()
@@ -882,7 +935,7 @@ segments(x0 = estar, x1 = estar, y0 = 0, y1 = cv$maxscore, lty = 2,
 title(adj = 0, cex.main = 1.2, font = 2, main = 'a')
 
 for(i in 1:3){
-  plot(x = c(unlist(par[[1]]$h), unlist(par[[2]]$h)), 
+  plot(x = c(unlist(par[[2]]$h), unlist(par[[1]]$h)), 
     y = unlist(coef(fit[[i]])$h), bg = 'cornflowerblue', 
     xlim = c(-1.5, 1.5), ylim = c(-1.5, 1.5), pch = 21, cex = 0.7, 
     xlab = 'True', ylab = 'Inferred', lwd = 0.7, xaxt = 'n', yaxt = 'n',
@@ -890,7 +943,7 @@ for(i in 1:3){
   axis(side = 1, at = seq(-1.5, 1.5, 0.5), lwd = 0.5, las = 1)
   axis(side = 2, at = seq(-1.5, 1.5, 0.5), lwd = 0.5, las = 1)
   segments(x0 = -2, x1 =2 , y0 = -2, y1 = 2, lty = 2, lwd = 0.7)
-  points(x = c(unlist(par[[1]]$J), unlist(par[[2]]$J)), 
+  points(x = c(unlist(par[[2]]$J), unlist(par[[1]]$J)), 
     y = unlist(coef(fit[[i]])$J), pch = 24, bg = 'orange', cex = 0.7, 
     lwd = 0.7)
   if(i==1) legend(x = 0.5, y = -0.5, legend = expression(italic(h), 
@@ -920,11 +973,12 @@ as suggested by cross-validation AUC in Fig.~\ref{fig:mfcv}{\bf a}.
 
 \subsection{Genetic code}
 We consider a different learning task example with a much larger space of
-response groups, namely those of amino acides; $K=21$, which
+response groups, namely those of amino acids; $K=21$, which
 include 20 amino acids 
 plus stop signal (`*'), encoded by DNA sequences ($x_i=\sf{a, c, g, t}$).
 In DNA sequences, three nucleotides combine to encode specific amino acids. 
-We will train a model attempting to discover this genetic code from data.
+We will train a model attempting to re-discover the mapping from nucleotide 
+sequences to amino acids.
 %
 <<ntaa>>=
 set.seed(351)
@@ -961,11 +1015,11 @@ cv <- crossVal(aa ~ .^2, data = xdat, lambda = 10^seq(-3, 1, 0.5),
 cv
 @
 %
-Note that with the multinomial response group, the score used is 
-Eq.~(\ref{eq:s}). The class \code{cv.bbl} extends \code{bbl} and
+Note that with the multinomial response group, the accuracy defined by 
+Eq.~(\ref{eq:s}) is used. The class \code{cv.bbl} extends \code{bbl} and
 stores the model with the optimal $\lambda$.
 In contrast to Section~\ref{sec:BB}, we do not refit the model under this $\lambda$
-because the score is maximum.
+because accuracy is maximum.
 Testing can use all possible codon sequences ($4^3=64$ total):
 %
 <<codon>>=
@@ -975,11 +1029,11 @@ dim(panel)
 p <- predict(cv, panel)
 ap <- Biostrings::DNAString(paste(t(panel), collapse = ''))
 ap <- strsplit(as.character(Biostrings::translate(ap)), split = '')[[1]]
-score <- mean(ap == p$yhat)
-score
+accuracy <- mean(ap == p$yhat)
+accuracy
 @
 %
-The trained model has perfect prediction score of 1 and will not 
+The trained model has perfect accuracy of 1 and will not 
 make mistakes in any translation of DNA sequences. 
 
 \subsection{Image data}
@@ -1037,7 +1091,8 @@ BB, Boltzmann Bayes; NN, neural network; RBM, restricted Boltzmann machine.}
 \end{table}
 
 
-The above run will take a few minutes. By feeding a vector of 
+The above run will take a few minutes and yield a prediction score of $0.89$. 
+By feeding a vector of 
 $\epsilon$ values, one can obtain the profile shown in Fig.~\ref{fig:mnist}. The jump in performance under $\epsilon^*\sim 0.05$
 over $\epsilon \rightarrow 0$ (naive Bayes) limit gives a measure of interaction
 effects. The relatively small value of $\epsilon^*$ at the optimal condition,
@@ -1052,17 +1107,26 @@ mnist <- bbl(y ~ .^2, data = dat, method = 'mf', eps = 0.05)
 dtest <- read.csv(system.file('extdata/mnist_test.csv', package = 'bbl'))
 dtest <- dtest[, colnames(dtest) %in% colnames(dat)]
 pr <- predict(mnist, newdata = dtest[, -1], progress.bar = TRUE)
-score <- mean(pr$yhat == dtest$y)
-score
+accuracy <- mean(pr$yhat == dtest$y)
+@
+%
+%
+<<mnist3_2, eval=TRUE, echo=FALSE>>=
+accuracy <- 0.916
+@
+%
+%
+<<mnist3_3, eval=TRUE, echo=TRUE>>=
+accuracy
 @
 %
 
 Since \code{mnist} dropped a subset of original predictors, the test data must
-be filtered accordingly. Note the increase in test score compared to 
-cross-validation score because of the use of full training data. 
+be filtered accordingly. Note the increase in accuracy compared to 
+cross-validation value because of the use of full training data. 
 
 We performed similar cross-validation and test analyses of the full MNIST data 
-(training $n=60,\!000$ and test $n=10,\!000$) and obtained the test score of $0.915$ 
+(training $n=60,\!000$ and test $n=10,\!000$) and obtained the accuracy of $0.915$ 
 (classification error rate $8.5\%$), which compares favorably 
 with other large-scale neural network algorithms (Table~\ref{tb:mnist}).
 
@@ -1174,27 +1238,6 @@ The AUC range obtained above is representative of the sensitivity and
 specificity levels one would get when scanning a genomic segment using 
 a trained model for detection of a binding site to within resolution of
 $\sim 3$~base pairs.
-
-We analyzed 684 data sets with at least 30 sequences from JASPAR database 
-of varying sample
-sizes and segment lengths with the same protocol. Differences between fully
-optimized AUC scores and those from non-interacting models (naive Bayes) were
-most pronounced above the intermediate range of AUC (Fig.~\ref{fig:tfbs}).
-
-\setkeys{Gin}{width=0.6\textwidth}
-\begin{figure}[t!]
-\centering
-\includegraphics[scale=1]{tfbs}
-\caption{\small 
-AUC scores of \pkg{bbl} model trained on 684 transcription factor binding site
-sequence data sets from JASPAR \citep{jaspar2018} under the same protocol as 
-in Fig.~\ref{fig:jaspar}. Naive Bayes (NB; mean field
-with $\epsilon=0$) and full mean field (MF) results are compared.
-The symbol colors show the segment length of each
-binding site data (color-map in legend).
-}
-\label{fig:tfbs}
-\end{figure}
 
 \section{Summary} \label{sec:summary}
 We introduced a user-friendly \proglang{R} package \pkg{bbl}, 

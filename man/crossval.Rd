@@ -7,7 +7,7 @@
 crossVal(
   formula,
   data,
-  weights = NULL,
+  weights,
   novarOk = FALSE,
   lambda = 1e-05,
   lambdah = 0,
@@ -27,7 +27,7 @@ crossVal(
 \item{data}{Data frame of data. Column names must match \code{formula}.}
 
 \item{weights}{Frequency vector of how many times each row of \code{data} must
-be repeated. If \code{NULL}, defaults to vector of 1s.
+be repeated. If \code{NULL}, defaults to vector of 1s. 
 Fractional values are not supported.}
 
 \item{novarOk}{Proceed even when there are predictors with only one factor level.}
@@ -36,10 +36,10 @@ Fractional values are not supported.}
 will be repeated for each value. Restricited to non-negative values.}
 
 \item{lambdah}{L2 penalizer in \code{method = 'pseudo'} applied to
-parameter \code{h}. In contrast to \code{lambda},
+parameter \code{h}. In contrast to \code{lambda}, 
 only a single value is allowed.}
 
-\item{eps}{Vector of regularization parameters, \eqn{\epsilon\in[0,1]},
+\item{eps}{Vector of regularization parameters, \eqn{\epsilon\in[0,1]}, 
 for \code{method = 'mf'}. Inference will be repeated
 for each value.}
 
@@ -62,24 +62,22 @@ accuracy will be used as score.}
 }
 \value{
 Object of class \code{cv.bbl} extending \code{\link{bbl}}, a list
-with extra components
-\item{regstar}{Value of regularization parameter, \code{lambda}
-and \code{eps} for \code{method='pseudo'} and \code{method='mf'},
-respectively, at which the accuracy score is maximized}
-\item{maxscore}{Value of maximum accuracy score}
-\item{cvframe}{Data frame of regularization parameters and scores scanned.
-If \code{use.auc=TRUE}, also contains 95\% c.i.}
-The components of \code{\link{bbl}} store the optimal model trained
-if \code{storeOpt=TRUE}.
+        with extra components:  
+        \code{regstar}, Value of regularization parameter, \code{lambda} and \code{eps} 
+        for \code{method='pseudo'} and \code{method='mf'},respectively, 
+        at which the accuracy score is maximized; 
+        \code{maxscore}, Value of maximum accuracy; 
+        \code{cvframe}, Data frame of regularization parameters and scores scanned. 
+        If \code{use.auc=TRUE}, also contains 95% c.i.
 }
 \description{
 Run multiple fittings of \code{bbl} model with training/validation
 division of data
 }
 \details{
-The \code{data} slot of \code{object} is split into training and validation
+The \code{data} slot of \code{object} is split into training and validation 
 subsets of (\code{nfold}-1):1 ratio. The model is trained with the
-former and validated on the latter. Individual division/fold results are
+former and validated on the latter. Individual division/fold results are 
 combined into validation result for all instances in the data set and
 prediction score is evaluated using the known response group
 identity.

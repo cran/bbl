@@ -28,8 +28,8 @@ Random samples are drawn from Boltzmann distribution
 All possible factor states are enumerated exhaustively using
 input argument \code{predictors}. If the number of predictors \eqn{m}
 or the number of factor levels \eqn{L_i} for each predictor \eqn{i}
-are even moderately large (\eqn{m\ge 10} or \eqn{L_i\ge 5}),
-this function will likely hang because the number of all possible
+are even moderately large (\eqn{m\ge 10} or \eqn{L_i\ge 5}), 
+this function will likely hang because the number of all possible 
 states grows exponentially.
 }
 \examples{

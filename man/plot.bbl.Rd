@@ -9,14 +9,14 @@
 \arguments{
 \item{x}{Object of class \code{bbl}}
 
-\item{layout}{Matrix of layouts for arrangment of linear and interaction
-parameters. If \code{NULL}, the top half will be used for linear
-parameter barplot and bottom half will be divided into interaction
+\item{layout}{Matrix of layouts for arrangment of linear and interaction 
+parameters. If \code{NULL}, the top half will be used for linear 
+parameter barplot and bottom half will be divided into interaction 
 heatmaps for each response group.}
 
 \item{hcol}{Color for linear barplots. Grayscale if \code{NULL}.}
 
-\item{Jcol}{Color for interaction heatmaps. Default (\code{NULL}) is
+\item{Jcol}{Color for interaction heatmaps. Default (\code{NULL}) is 
 \code{RdBu} from \code{RColorBrewer}.}
 
 \item{npal}{Number of color scales.}

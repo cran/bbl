@@ -24,15 +24,15 @@ bbl.fit(
 \item{qJ}{Matrix of logicals indicating which predictor combinations
 are interacting.}
 
-\item{weights}{Vector of non-negative integer frequencies, recoding
-the number of times each row of data must be repeated.
-If \code{NULL}, assumed to be all 1. Fractional weights are not
+\item{weights}{Vector of non-negative integer frequencies, recoding 
+the number of times each row of data must be repeated. 
+If \code{NULL}, assumed to be all 1. Fractional weights are not 
 supported.}
 
 \item{xlevels}{List of factor levels for predictors. If \code{NULL},
 will be inferred from data with factor levels ordered alphanumerically.}
 
-\item{verbose}{Verbosity level of output. Will be propagated to
+\item{verbose}{Verbosity level of output. Will be propagated to 
 \code{\link{mlestimate}} with one level down.}
 
 \item{method}{\code{c('pseudo','mf')}; inference method.}
@@ -44,8 +44,8 @@ frequencies}
 }
 \value{
 List of named components \code{h}, \code{J}, \code{lkh}, and
-\code{lz}; see \code{\link{bbl}} for information regarding these
-components.
+        \code{lz}; see \code{\link{bbl}} for information regarding these
+        components.
 }
 \description{
 Performs bbl inference using response vector and predictor matrix

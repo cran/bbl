@@ -27,7 +27,7 @@ Predictor-response paired data are generated
 \details{
 The argument \code{response} is used to set up all possible levels
 of response groups and likewise for \code{predictors}. The parameter
-argument \code{\link{par}} must have the appropriate structure
+argument \code{\link{par}} must have the appropriate structure 
 consistent with \code{response} and \code{predictors}. This function
 is a wrapper calling \code{\link{sample_xi}} multiple times.
 }

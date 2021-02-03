@@ -18,7 +18,7 @@ randompar(predictors, distr = "unif", h0 = 0, dh = 1, J0 = 0, dJ = 1)
 
 \item{J0}{Mean of interaction parameters.}
 
-\item{dJ}{\code{sd} of interactions if \code{distr = 'unif'}.
+\item{dJ}{\code{sd} of interactions if \code{distr = 'unif'}. 
 If \code{distr = 'norm'}, \eqn{J = [J_0-dJ, J_0+dJ]}.}
 }
 \value{
@@ -29,7 +29,7 @@ Random values of bias and interaction parameters are generated
 using either uniform or normal distributions.
 }
 \details{
-Input argument \code{predictors} is used to set up proper list
+Input argument \code{predictors} is used to set up proper list 
 structures of parameters.
 }
 \examples{

@@ -9,7 +9,8 @@ freq2raw(data, freq)
 \arguments{
 \item{data}{Data frame with factors in columns}
 
-\item{freq}{Vector of frequency of each row in \code{data}}
+\item{freq}{Vector of frequency of each row in \code{data}; can be a named column 
+in \code{data}; if missing, the column \code{Freq} is looked for in \code{data}}
 }
 \value{
 Data frame with one row per instances

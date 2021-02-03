@@ -24,10 +24,10 @@ mlestimate(
 )
 }
 \arguments{
-\item{xi}{Data matrix; expected to be numeric with elements ranging from
+\item{xi}{Data matrix; expected to be numeric with elements ranging from 
 zero to positive integral upper bound \code{L-1}.}
 
-\item{weights}{Frequency vector of number of times each row of \code{xi}
+\item{weights}{Frequency vector of number of times each row of \code{xi} 
 is to be repeated. If \code{NULL}, defaults to 1. Expected
 to be non-negative integers.}
 
@@ -40,7 +40,7 @@ mean field inference.}
 \item{L}{Vector of number of factor levels in each predictor. If
 \code{NULL}, will be inferred from \code{xi}.}
 
-\item{lambda}{Vector of L2 regularization parameters for
+\item{lambda}{Vector of L2 regularization parameters for 
 \code{method = 'pseudo'}. Applies to interaction parameters \code{J}.}
 
 \item{lambdah}{L2 parameters for \code{h} in \code{'pseudo'}.
@@ -73,8 +73,8 @@ with \code{eps = 0}.}
 in \code{'pseudo'}.}
 }
 \value{
-List of inferred parameters \code{h} and \code{J}. See
-\code{\link{bbl}} for parameter structures.
+List of inferred parameters \code{h} and \code{J}. See 
+       \code{\link{bbl}} for parameter structures.
 }
 \description{
 Perform inference of bias and interaction parameters for a single response group

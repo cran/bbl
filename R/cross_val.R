@@ -35,15 +35,13 @@
 #' @param storeOpt Store the optimal fitted object of class \code{\link{bbl}}.
 #' @param ... Other parameters to \code{\link{mlestimate}}.
 #' @return Object of class \code{cv.bbl} extending \code{\link{bbl}}, a list
-#'         with extra components
-#'         \item{regstar}{Value of regularization parameter, \code{lambda}
-#'         and \code{eps} for \code{method='pseudo'} and \code{method='mf'},
-#'         respectively, at which the accuracy score is maximized}
-#'         \item{maxscore}{Value of maximum accuracy score}
-#'         \item{cvframe}{Data frame of regularization parameters and scores scanned.
-#'             If \code{use.auc=TRUE}, also contains 95% c.i.}
-#'         The components of \code{\link{bbl}} store the optimal model trained
-#'         if \code{storeOpt=TRUE}.
+#'         with extra components:  
+#'         \code{regstar}, Value of regularization parameter, \code{lambda} and \code{eps} 
+#'         for \code{method='pseudo'} and \code{method='mf'},respectively, 
+#'         at which the accuracy score is maximized; 
+#'         \code{maxscore}, Value of maximum accuracy; 
+#'         \code{cvframe}, Data frame of regularization parameters and scores scanned. 
+#'         If \code{use.auc=TRUE}, also contains 95% c.i.
 #' @examples
 #' set.seed(513)
 #' m <- 5
@@ -56,22 +54,33 @@
 #' cv <- crossVal(y ~ .^2, data=dat, method='mf', eps=seq(0.1,0.9,0.1))
 #' cv
 #' @export
-crossVal <- function(formula, data, weights=NULL, novarOk=FALSE, 
+crossVal <- function(formula, data, weights, novarOk=FALSE, 
                      lambda=1e-5, lambdah=0, eps=0.9, nfold=5, 
                      method='pseudo', use.auc=TRUE, 
                      verbose=1, progress.bar=FALSE, storeOpt=TRUE, ...){
-  
-  
+
   cl <- match.call()
   if(missing(data)) 
     stop('data argument required')
-  if(!is.null(weights)){
+  
+  if(!missing(weights)){
+    mfrq <- which(names(cl) == 'weights')
+    if(length(mfrq) != 1) stop('Error in weights argument')
+    frq <- as.character(cl[mfrq])
+    if(frq %in% colnames(data)){
+      tmp <- data[, frq]
+      data <- data[,-which(colnames(data) == frq)]
+      weights <- tmp
+    }
     if(length(weights)!=NROW(data))
       stop('Length of weights does not match data')
     zero <- weights==0
     data <- data[!zero,]
     weights <- weights[!zero]   # remove rows with zero weights
+  } else{
+    weights <- NULL
   }
+
 # data <- as.data.frame(lapply(data, function(x) if(is.numeric(x)) factor(x)))
   term <- terms(formula, data=data)
   idy <- attributes(term)$response

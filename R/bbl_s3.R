@@ -14,17 +14,18 @@
 #' @param weights Vector of weights for each instance in data. Restricted to 
 #'        non-negative integer frequencies, recoding the number of times 
 #'        each row of data must be repeated. If \code{NULL},
-#'        assumed to be all 1. Fractional weights are not supported.
+#'        assumed to be all 1. Fractional weights are not supported. Can be
+#'        a named column in \code{data}
 #' @param xlevels List of factor levels for predictors. If \code{NULL},
 #'        will be inferred from data with factor levels ordered alphanumerically.
 #' @param verbose Output verbosity level. Will be send to down-stream function
-#'        calls with one level lower.
+#'        calls with one level lower
 #' @param method BB inference algorithm; pseudo-likelihood inference (\code{'pseudo'})
-#'        or mean field (\code{'mf'}).
+#'        or mean field (\code{'mf'})
 #' @param novarOk If \code{TRUE}, will proceed with predictors having only one
-#'        level.
+#'        level
 #' @param testNull Repeat the inference for the `pooled' sample; i.e., under the
-#'        null hypothesis of all rows in data belonging to a single group.
+#'        null hypothesis of all rows in data belonging to a single group
 #' @param prior.count Prior count for computing single predictor and pairwise
 #'        frequencies
 #' @param ... Other parameters to \code{\link{mlestimate}}.
@@ -59,7 +60,7 @@
 #'   \item{df}{Degrees of freedom.} 
 #' @examples
 #' titanic <- as.data.frame(Titanic)
-#' b <- bbl(Survived ~ .^2, data=titanic[,1:4], weights=titanic$Freq)
+#' b <- bbl(Survived ~ (Class + Sex + Age)^2, data = titanic, weights = Freq)
 #' b
 #' @import Rcpp
 #' @import stats
@@ -67,19 +68,31 @@
 #' @importFrom grDevices colorRampPalette gray.colors
 #' @useDynLib bbl
 #' @export
-bbl <- function(formula, data, weights=NULL, xlevels=NULL, verbose=1, 
-                method='pseudo', novarOk=FALSE, testNull=TRUE, 
-                prior.count=1, ...){
+bbl <- function(formula, data, weights, xlevels = NULL, verbose = 1, 
+                method = 'pseudo', novarOk = FALSE, testNull = TRUE, 
+                prior.count = 1, ...){
 
   cl <- match.call()
   if(missing(data)) 
     stop('data argument required')
-  if(!is.null(weights)){
+
+  if(!missing(weights)){
+    mfrq <- which(names(cl) == 'weights')
+    if(length(mfrq) != 1) stop('Error in weights argument')
+    frq <- as.character(cl[mfrq])
+    if(frq %in% colnames(data)){
+      tmp <- data[, frq]
+      data <- data[,-which(colnames(data) == frq)]
+      weights <- tmp
+    }
+
     if(length(weights)!=NROW(data))
       stop('Length of weights does not match data')
     zero <- weights==0
     data <- data[!zero,]
     weights <- weights[!zero]   # remove rows with zero weights
+  } else{
+    weights <- NULL
   }
   
   term <- stats::terms(formula, data=data)

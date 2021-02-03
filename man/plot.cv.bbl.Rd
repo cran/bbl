@@ -17,7 +17,7 @@
 )
 }
 \arguments{
-\item{x}{Object of class \code{cv.bbl} from a call to
+\item{x}{Object of class \code{cv.bbl} from a call to 
 \code{\link{crossVal}}}
 
 \item{type}{Symbol type in \code{\link{plot}}, present here to set default.}

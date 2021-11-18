@@ -1,6 +1,6 @@
 Package: bbl
 Title: Boltzmann Bayes Learner
-Version: 0.4.0
+Version: 0.4.1
 Authors@R: c(person("Jun","Woo",role=c("aut","cre"),
                      email="junwoo035@gmail.com",
                      comment=c(ORCID="0000-0003-3220-2064")))
@@ -18,10 +18,10 @@ Description: Supervised learning using Boltzmann Bayes model inference,
 License: GPL (>= 2)
 LinkingTo: Rcpp
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 NeedsCompilation: yes
 Suggests: glmnet, BiocManager, Biostrings
 Author: Jun Woo [aut, cre] (<https://orcid.org/0000-0003-3220-2064>)
 Repository: CRAN
-Packaged: 2021-02-03 00:58:41 UTC; junwoo
-Date/Publication: 2021-02-03 05:20:02 UTC
+Packaged: 2021-11-18 15:27:50 UTC; junwoo
+Date/Publication: 2021-11-18 17:00:02 UTC

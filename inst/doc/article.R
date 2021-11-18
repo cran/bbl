@@ -68,7 +68,7 @@ gauc
 if(!require('glmnet'))
   install.packages('glmnet')
 library('glmnet')
-xdat <- data.matrix(dtrain[, 1:3])
+xdat <- model.matrix(~ Class + Sex + Age, data = dtrain)[,-1]
 y <- dtrain[, 4]
 gnet <- cv.glmnet(x = xdat, y = y, family = 'binomial', alpha = 1,
   nfolds = 5, type.measure = 'auc')

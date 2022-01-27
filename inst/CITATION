@@ -1,0 +1,15 @@
+bibentry(bibtype = "Article",
+  title        = "{bbl}: {B}oltzmann Bayes Learner for High-Dimensional Inference with Discrete Predictors in {R}",
+  author       = c(person(given = "Jun",
+                          family = "Woo"),
+                   person(given = "Jinhua",
+                          family = "Wang")),
+  journal      = "Journal of Statistical Software",
+  year         = "2022",
+  volume       = "101",
+  number       = "5",
+  pages        = "1--32",
+  doi          = "10.18637/jss.v101.i05",
+  header       = "To cite bbl in publications use:"
+)
+

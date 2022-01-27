@@ -67,6 +67,8 @@
 #' @import graphics
 #' @importFrom grDevices colorRampPalette gray.colors
 #' @useDynLib bbl
+#' @author Jun Woo, \email{junwoo035@gmail.com}
+#' @references \doi{10.18637/jss.v101.i05}
 #' @export
 bbl <- function(formula, data, weights, xlevels = NULL, verbose = 1, 
                 method = 'pseudo', novarOk = FALSE, testNull = TRUE, 

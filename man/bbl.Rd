@@ -94,3 +94,9 @@ titanic <- as.data.frame(Titanic)
 b <- bbl(Survived ~ (Class + Sex + Age)^2, data = titanic, weights = Freq)
 b
 }
+\references{
+\doi{10.18637/jss.v101.i05}
+}
+\author{
+Jun Woo, \email{junwoo035@gmail.com}
+}

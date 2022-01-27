@@ -1,7 +1,7 @@
-28c2461c770ea4ead86c25ccfab21ae5 *DESCRIPTION
+bab1dec98de36c1c87bdd4c3ca28cd3f *DESCRIPTION
 035aef5580a8b0ebb686791d9e60ac17 *NAMESPACE
 a4f9d8129887277ad15c308d2b370da0 *R/RcppExports.R
-d7ec63b1012dd684356e5e2786cf2bf5 *R/bbl_s3.R
+ebdf4d0d85704b0138bb5cec88d9f6c8 *R/bbl_s3.R
 96fe1bd5567bcb686add396357f9fb79 *R/cross_val.R
 3110deda35fac4e3c6bd0a0e5458e17e *R/gibbs.R
 bbb85bd97fd9ce4863d2e54d3bb1ec82 *R/methods.R
@@ -10,14 +10,16 @@ bbb85bd97fd9ce4863d2e54d3bb1ec82 *R/methods.R
 c621461bb40efaa554b28c3fe56c0133 *R/sample.R
 2d78ebb2464ee416c2c20899553a1602 *R/utils.R
 f69c02046eaca292a154108d9ff70fb2 *README.md
+27ac4b1960b6c0bc1ed13b5cadcdafcc *build/partial.rdb
 3603b645d368a0684739b4c3727060cd *build/vignette.rds
+a70d107a013bba73bfedf7f1182e4fc9 *inst/CITATION
 267be55972a3a4dc0ba2bf8a8fbdc815 *inst/doc/article.R
 91e22c61aa748329e5e659893d5aeb36 *inst/doc/article.Rnw
-a64b2f3d26eadff7ed75775d07a453b4 *inst/doc/article.pdf
+3e2a49135366e4dedf398acddd8802a9 *inst/doc/article.pdf
 0bcc5a18df5b077a486a8646ee522cab *inst/extdata/MA0014.3.fasta
 80ac993c7068d76f96884195dc067bb3 *inst/extdata/mnist_test.csv
 f9d2bd361e7cfe08e0a2b56f082a88e9 *inst/extdata/mnist_train.csv
-e7664506d436eef4af9d5fdc2d7ece6b *man/bbl.Rd
+c59217d66b7e27002a523de0b1b93c6d *man/bbl.Rd
 ae3891cc0373a78904d406fef6f278c5 *man/bbl.fit.Rd
 424748d0f2b0dadcf58641a78c1fff26 *man/crossVal.Rd
 88fc59495df224b4333adf12fb49ebd2 *man/fitted.bbl.Rd
@@ -53,6 +55,6 @@ a37379e2c74c0d87101d1deb07d70616 *src/bfgs.h
 91e22c61aa748329e5e659893d5aeb36 *vignettes/article.Rnw
 62fc324fc86fd3a04a8c7a386569448a *vignettes/digits.pdf
 4efba27193ce5ba197f3577fab141d35 *vignettes/mnist_mf.pdf
-fa8dad2531d80706378fb9640fd845ab *vignettes/ref.bib
+644cffa7f0b3ae8c27c36f6d2f9be42f *vignettes/ref.bib
 70cdc67c81250218af80fa115b837d4f *vignettes/tfbf.pdf
 4bb7f1226cd21291cff23fce4de9178f *vignettes/tfbs.pdf
